@@ -2,6 +2,9 @@
 
 `aws-dynamic-consul-catalog [global-config] service [service-config]`
 
+## Docker build
+
+See [Docker Hub - seatgeek/aws-dynamic-consul-catalog](https://hub.docker.com/r/seatgeek/aws-dynamic-consul-catalog/)
 
 ## Consul & AWS Configuration
 
