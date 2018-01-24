@@ -48,3 +48,11 @@ $(BINARIES): $(BUILD_DIR)/aws-dynamic-consul-catalog-%: $(BUILD_DIR)
 dist: install fmt vet
 	@echo "=> building ..."
 	$(MAKE) -j $(BINARIES)
+
+.PHONY: docker
+docker:
+	@echo "=> build and push Docker image ..."
+	@docker login -u $(DOCKER_USER) -p $(DOCKER_PASS)
+	docker build -f Dockerfile -t seatgeek/aws-dynamic-consul-catalog:$(COMMIT) .
+	docker tag seatgeek/aws-dynamic-consul-catalog:$(COMMIT) seatgeek/aws-dynamic-consul-catalog:$(TAG)
+	docker push seatgeek/aws-dynamic-consul-catalog:$(TAG)
