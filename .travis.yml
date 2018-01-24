@@ -10,10 +10,10 @@ services:
 
 cache:
   directories:
-    - backend/vendor/github.com
-    - backend/vendor/go4.org
-    - backend/vendor/golang.org
-    - backend/vendor/gopkg.in
+    - vendor/github.com
+    - vendor/go4.org
+    - vendor/golang.org
+    - vendor/gopkg.in
 
 env:
   global:
