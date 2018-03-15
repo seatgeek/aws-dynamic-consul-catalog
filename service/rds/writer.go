@@ -146,6 +146,8 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		status = "critical"
 	case "resetting-master-credentials":
 		status = "warning"
+	case "storage-optimization":
+		status = "passing"
 	case "storage-full":
 		status = "warning"
 	case "upgrading":
