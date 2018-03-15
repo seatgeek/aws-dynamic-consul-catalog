@@ -153,7 +153,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	case "upgrading":
 		status = "warning"
 	default:
-		status = "warning"
+		status = "passing"
 	}
 
 	service := &config.Service{
