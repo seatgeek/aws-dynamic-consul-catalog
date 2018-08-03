@@ -127,7 +127,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	case "failed":
 		status = "critical"
 	case "rebooting":
-		status = "critical"
+		status = "passing"
 	case "renaming":
 		status = "critical"
 	case "restore-error":
