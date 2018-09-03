@@ -54,7 +54,7 @@ func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName strin
 				continue
 			}
 
-			logger.Debug("Wait index is changed (%d <> %d)", localWaitIndex, remoteWaitIndex)
+			logger.Debugf("Wait index is changed (%d <> %d)", localWaitIndex, remoteWaitIndex)
 			q.WaitIndex = remoteWaitIndex
 
 			state.Lock()
@@ -78,8 +78,12 @@ func processCatalog(n internalNode) config.Services {
 	}
 
 	for _, check := range n.Checks {
+		if check.CheckID == "serfHealth" {
+			continue
+		}
+
 		if _, ok := services[check.ServiceID]; !ok {
-			log.Fatalf("Could not find a service %s for check %s", check.ServiceID, check.CheckID)
+			log.Fatalf("Could not find a service '%s' for check '%s'", check.ServiceID, check.CheckID)
 		}
 
 		services[check.ServiceID].CheckID = check.CheckID

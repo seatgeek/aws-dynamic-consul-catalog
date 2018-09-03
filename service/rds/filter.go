@@ -1,6 +1,8 @@
 package rds
 
 import (
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	observer "github.com/imkira/go-observer"
 	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
@@ -49,30 +51,40 @@ func (r *RDS) filterByInstanceData(instance *config.DBInstance, filters config.F
 		return true
 	}
 
-	for k, v := range filters {
+	for k, filter := range filters {
 		switch k {
 		case "AvailabilityZone":
-			return v == aws.StringValue(instance.AvailabilityZone)
+			return r.matches(filter, aws.StringValue(instance.AvailabilityZone))
 		case "DBInstanceArn":
-			return v == aws.StringValue(instance.DBInstanceArn)
+			return r.matches(filter, aws.StringValue(instance.DBInstanceArn))
 		case "DBInstanceClass":
-			return v == aws.StringValue(instance.DBInstanceClass)
+			return r.matches(filter, aws.StringValue(instance.DBInstanceClass))
 		case "DBInstanceIdentifier":
-			return v == aws.StringValue(instance.DBInstanceIdentifier)
+			return r.matches(filter, aws.StringValue(instance.DBInstanceIdentifier))
 		case "DBInstanceStatus":
-			return v == aws.StringValue(instance.DBInstanceStatus)
+			return r.matches(filter, aws.StringValue(instance.DBInstanceStatus))
 		case "Engine":
-			return v == aws.StringValue(instance.Engine)
+			return r.matches(filter, aws.StringValue(instance.Engine))
 		case "EngineVersion":
-			return v == aws.StringValue(instance.EngineVersion)
+			return r.matches(filter, aws.StringValue(instance.EngineVersion))
 		case "VpcId":
-			return v == aws.StringValue(instance.DBSubnetGroup.VpcId)
+			return r.matches(filter, aws.StringValue(instance.DBSubnetGroup.VpcId))
 		default:
-			log.Fatalf("Unknown instance filter key %s (%s)", k, v)
+			log.Fatalf("Unknown instance filter key %s (%s)", k, filter)
 		}
 	}
 
 	return true
+}
+
+func (r *RDS) matches(filter, value string) bool {
+	for _, v := range strings.Split(filter, ",") {
+		if v == value {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *RDS) filterByInstanceTags(instance *config.DBInstance, filters config.Filters) bool {
