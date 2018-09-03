@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -18,7 +19,8 @@ func ProcessFilters(userFilters []string) Filters {
 		name := split[0]
 
 		if _, ok := results[name]; ok {
-			log.Fatalf("Duplicate filer name %s", name)
+			results[name] = fmt.Sprintf("%s,%s", results[name], split[1])
+			continue
 		}
 
 		results[name] = split[1]
