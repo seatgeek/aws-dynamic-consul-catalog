@@ -32,14 +32,36 @@ func (r *RDS) reader(prop observer.Property) {
 
 func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 	logger.Debug("Starting refresh of RDS information")
-	resp, err := r.rds.DescribeDBInstances(&rds.DescribeDBInstancesInput{})
-	if err != nil {
-		log.Fatal(err)
-	}
 
+	var marker *string
+	pages := 0
 	instances := make([]*config.DBInstance, 0)
-	for _, instance := range resp.DBInstances {
-		instances = append(instances, &config.DBInstance{instance, r.getInstanceTags(instance)})
+
+	for {
+		pages = pages + 1
+		if marker != nil {
+			logger.Debugf("Reading RDS information page %d (from marker: %s)", pages, *marker)
+		} else {
+			logger.Debug("Reading RDS information page 1")
+		}
+
+		resp, err := r.rds.DescribeDBInstances(&rds.DescribeDBInstancesInput{
+			Marker:     marker,
+			MaxRecords: aws.Int64(100),
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		marker = resp.Marker
+
+		for _, instance := range resp.DBInstances {
+			instances = append(instances, &config.DBInstance{instance, r.getInstanceTags(instance)})
+		}
+
+		if marker == nil {
+			logger.Debugf("Finished reading RDS information page (saw %d pages)", pages)
+			break
+		}
 	}
 
 	prop.Update(instances)
