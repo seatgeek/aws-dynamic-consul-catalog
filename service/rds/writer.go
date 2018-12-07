@@ -95,7 +95,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	tags := make([]string, 0)
 	if isSlave {
 		tags = append(tags, r.consulReplicaTag)
-		id = id + "-" + r.consulReplicaTag
+		id = fmt.Sprintf("%s-%s-%s", id, *instance.DBInstanceIdentifier, r.consulReplicaTag)
 	}
 
 	if isMaster {
