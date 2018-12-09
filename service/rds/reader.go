@@ -50,7 +50,9 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 			MaxRecords: aws.Int64(100),
 		})
 		if err != nil {
-			log.Fatal(err)
+			logger.Errorf("Could not read RDS instances: %+v", err)
+			time.Sleep(5 * time.Second)
+			continue
 		}
 		marker = resp.Marker
 
