@@ -36,6 +36,7 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 	var marker *string
 	pages := 0
 	instances := make([]*config.DBInstance, 0)
+	errorCount := 0
 
 	for {
 		pages = pages + 1
@@ -52,10 +53,17 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 		if err != nil {
 			logger.Errorf("Could not read RDS instances: %+v", err)
 			time.Sleep(5 * time.Second)
+			errorCount = errorCount + 1
+
+			if errorCount >= 10 {
+				log.Fatal("Could not get RDS instances after 10 retries")
+			}
+
 			continue
 		}
-		marker = resp.Marker
+		errorCount = 0
 
+		marker = resp.Marker
 		for _, instance := range resp.DBInstances {
 			instances = append(instances, &config.DBInstance{instance, r.getInstanceTags(instance)})
 		}
