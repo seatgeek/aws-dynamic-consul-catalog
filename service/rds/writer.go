@@ -3,6 +3,7 @@ package rds
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -254,6 +255,10 @@ func (r *RDS) identicalService(a, b *config.Service) bool {
 	}
 
 	if a.CheckStatus != b.CheckStatus {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.ServiceMeta, b.ServiceMeta) {
 		return false
 	}
 
