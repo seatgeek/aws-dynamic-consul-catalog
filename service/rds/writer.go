@@ -168,6 +168,13 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\nAddr: %s\n\nmanaged by aws-dynamic-consul-catalog", instance.PendingModifiedValues.GoString(), addr),
 	}
 
+	service.ServiceMeta = make(map[string]string)
+	service.ServiceMeta["Engine"] = aws.StringValue(instance.Engine)
+	service.ServiceMeta["EngineVersion"] = aws.StringValue(instance.EngineVersion)
+	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
+	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
+	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
+
 	if stringInSlice(service.ServiceID, seen.Services) {
 		logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.ServiceID)
 		if r.onDuplicate == "quit" {
@@ -179,13 +186,6 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		}
 	}
 	seen.Services = append(seen.Services, service.ServiceID)
-
-	service.ServiceMeta = make(map[string]string)
-	service.ServiceMeta["Engine"] = aws.StringValue(instance.Engine)
-	service.ServiceMeta["EngineVersion"] = aws.StringValue(instance.EngineVersion)
-	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
-	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
-	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
 
 	if stringInSlice(service.CheckID, seen.Checks) {
 		logger.Errorf("Found duplicate Check ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.CheckID)
