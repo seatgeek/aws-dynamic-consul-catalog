@@ -1,13 +1,11 @@
 package rds
 
 import (
+	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"time"
-
-	"fmt"
-
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	observer "github.com/imkira/go-observer"
@@ -180,6 +178,13 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		}
 	}
 	seen.Services = append(seen.Services, service.ServiceID)
+
+	service.ServiceMeta = make(map[string]string)
+	service.ServiceMeta["Engine"] = aws.StringValue(instance.Engine)
+	service.ServiceMeta["EngineVersion"] = aws.StringValue(instance.EngineVersion)
+	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
+	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
+	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
 
 	if stringInSlice(service.CheckID, seen.Checks) {
 		logger.Errorf("Found duplicate Check ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.CheckID)
