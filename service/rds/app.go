@@ -14,6 +14,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	cc "github.com/seatgeek/aws-dynamic-consul-catalog/backend/consul"
 	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	gelf "github.com/seatgeek/logrus-gelf-formatter"
 	log "github.com/sirupsen/logrus"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -43,6 +44,16 @@ func New(c *cli.Context) *RDS {
 		log.Fatalf("%s (%s)", err, c.GlobalString("log-level"))
 	}
 	log.SetLevel(logLevel)
+
+	logFormat := strings.ToLower(c.GlobalString("log-format"))
+	switch logFormat {
+	case "json":
+		log.SetFormatter(new(gelf.GelfFormatter))
+	case "text":
+		log.SetFormatter(new(log.TextFormatter))
+	default:
+		log.Fatalf("log-format value %s is not a valid option (json or text)", logFormat)
+	}
 
 	sess := session.Must(session.NewSession())
 

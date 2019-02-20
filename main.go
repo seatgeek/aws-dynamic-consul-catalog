@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-
 	"time"
 
 	"github.com/seatgeek/aws-dynamic-consul-catalog/service/rds"
@@ -55,6 +54,12 @@ func main() {
 			Usage:  "Define log level",
 			EnvVar: "LOG_LEVEL",
 			Value:  "info",
+		},
+		cli.StringFlag{
+			Name:   "log-format",
+			Usage:  "Define log format",
+			EnvVar: "LOG_FORMAT",
+			Value:  "text",
 		},
 	}
 	app.Commands = []cli.Command{
