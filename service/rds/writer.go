@@ -5,7 +5,6 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -107,9 +106,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		tags = append(tags, r.consulReplicaTag)
 	}
 
-	logger.Debugf("  Tags: %s", strings.Join(tags, ", "))
 	status := "passing"
-
 	switch aws.StringValue(instance.DBInstanceStatus) {
 	case "backing-up":
 		status = "passing"
@@ -203,7 +200,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	if ok {
 		logger.Debugf("Service %s exist in remote catalog, lets compare", id)
 
-		if r.identicalService(existingService, service) {
+		if r.identicalService(existingService, service, logger) {
 			logger.Debugf("Services are identical, skipping")
 			return
 		}
@@ -233,40 +230,53 @@ func (r *RDS) getServiceName(instance *config.DBInstance) string {
 	return ""
 }
 
-func (r *RDS) identicalService(a, b *config.Service) bool {
+func (r *RDS) identicalService(a, b *config.Service, logger *log.Entry) bool {
 	if a.ServiceID != b.ServiceID {
+		logger.Infof("ServiceID are not identical (%s vs %s)", a.ServiceID, b.ServiceID)
 		return false
 	}
 
 	if a.ServiceName != b.ServiceName {
+		logger.Infof("ServiceName are not identical (%s vs %s)", a.ServiceName, b.ServiceName)
 		return false
 	}
 
 	if a.ServiceAddress != b.ServiceAddress {
+		logger.Infof("ServiceAddress are not identical (%s vs %s)", a.ServiceAddress, b.ServiceAddress)
 		return false
 	}
 
 	if a.ServicePort != b.ServicePort {
+		logger.Infof("ServicePort are not identical (%d vs %d)", a.ServicePort, b.ServicePort)
 		return false
 	}
 
 	if a.CheckNotes != b.CheckNotes {
+		logger.Infof("CheckNotes are not identical (%s vs %s)", a.CheckNotes, b.CheckNotes)
 		return false
 	}
 
 	if a.CheckStatus != b.CheckStatus {
+		logger.Infof("CheckStatus are not identical (%s vs %s)", a.CheckStatus, b.CheckStatus)
 		return false
 	}
 
 	if !reflect.DeepEqual(a.ServiceMeta, b.ServiceMeta) {
+		logger.Infof("ServiceMeta are not identical (%+v vs %+v)", a.ServiceMeta, b.ServiceMeta)
 		return false
 	}
 
 	if removeUpdatedTimeRegexp.ReplaceAllLiteralString(a.CheckOutput, "") != removeUpdatedTimeRegexp.ReplaceAllLiteralString(b.CheckOutput, "") {
+		logger.Infof("CheckOutput are not identical (%+v vs %+v)", a.CheckOutput, b.CheckOutput)
 		return false
 	}
 
-	return !r.difference(a.ServiceTags, b.ServiceTags)
+	if !r.difference(a.ServiceTags, b.ServiceTags) {
+		logger.Infof("ServiceTags are not identical (%+v vs %+v)", a.ServiceTags, b.ServiceTags)
+		return false
+	}
+
+	return true
 }
 
 func (r *RDS) getDifference(slice1, slice2 []string) []string {
