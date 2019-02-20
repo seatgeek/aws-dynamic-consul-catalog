@@ -17,6 +17,7 @@ func (b *Backend) WriteService(service *config.Service) {
 			Port:    service.ServicePort,
 			Service: service.ServiceName,
 			Tags:    service.ServiceTags,
+			Meta:    service.ServiceMeta,
 		},
 		Check: &api.AgentCheck{
 			CheckID:     service.CheckID,
