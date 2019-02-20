@@ -3,7 +3,7 @@ sudo: required
 language: go
 
 go:
-  - 1.11
+  - "1.11"
 
 services:
   - docker
@@ -18,7 +18,7 @@ cache:
 env:
   global:
     - CGO_ENABLED=0
-    - GOBUILD="linux-amd64 windows-amd64 darwin-amd64"
+    - GOBUILD="linux-amd64 darwin-amd64"
     # DOCKER_USER
     - secure: "oHf0V+Znh5TzZeoFQ6Y7npSkwZEyFinOj9vGTznphqJfh45CrvDQVP/3BkqGLGeIUY7WiR+CkdY4Zu6pMgjXOxria5cz9+qgU9suBplATDRjnVfvEZXABpJkq2Opk0EZ4TxwAkSTYcpjy3DQcjBAhfOWQeIZPfYAQfRAJ9QDlhULWnjSuuNjvJ1H/M9Hv3HtLcfXEGDmvXeczgf5mistJpiw+Csn9rgDniSBPUe6w2REQM/vSBiqPQYUBYKx6dDCFvY5KWd3H2s+w4JA0B/f7/zMHot5at9Feea7WXxCbH8/gnRepCdO8DRHSTCmV55S9co5kJbD6vL1DVhSY9MLAh8atyoCqHILiOzPh95v/nnAkP5RTyrjBbfQkilwdn1el0vzW9i4iGvUU5AMdqqv7/6lobHYcfEaOPaIRBc+rRy5DJmvxKBrxFC+mChzloJNaZVU8UkSXYaLcAw8BgR2qrgIN5QBjqO+fX+4oOpoEs2Rp/0MSMp8FT8Cb7wWbd0tJOu654W7nUO3FSfU6qFKrnHqN0xjopC0hILh+iYd4bHOV4HhxUvPLiTdsmWslgy+770eZGlQufW6YgNwBgn/JS7c8/WTO5oBKEs9nD3EqvyEZepa/2KnAAVpGxCRf0NyWc/awCSLUev1fTnR0N0w1izLQdc95YoWHUJocuuF+no="
     # DOCKER_PASS
@@ -41,7 +41,6 @@ deploy:
     secure: Q5+xBeDLU/gdalRVhniTrmmR0Afq9w3Vni1RUwGhTAGSJK2kzO7Jz+Khvle63KbW67l0EoNIvpOxatKgx5wq0qiOwH4pSKkY6+hmqxY6bU73RNQBp/pXarxuQ9WiXHI3AditGxO4kVMXaB6pFi1GDb/L+yELR0cZ6PYRMEHUzi23+bVyI9Ky+1fERkwqOS2qMXNDKeSy2I27GbLvlRbsMksgBr3/q6c4By9LQfMgFUhwbzEM1DZaVk42cSlEXRM5zo+nhD7+nK335C+rheCYla4vJW8H+N2DJj7FM05Ve7vCwuC1Mw4OqsqnjdCIiPw1DXX7ZGOfsAQPwankWa2tI8cT7JX2h9+NhP5iEB7CBeukcUvsFD84mGipPrDGhZnCX/tjGrvi9ISjP4cdzWsxEqb3GSuI6n5t/f43qLjQv5dFnuMCLNl3m2CmFr1ICMMq2Gx8Us6z/mmQTfZUV9CfynKTOL1B15ugsuGlE4GinsjBEFXeu7Hg5U8vVgRjfcrdyBMfH0XjPMl91t4QtbYeZWFOIvVvcEVHGmTcHCUetJeG+3UJrHLVAgeTRFaOZQoiucq6xaoy7/BxC0St5TvI1DugpD3V0hQ5eCrfsOn2cRLHp81vdpMPV0CL0+ay99blINFcD4q+T4BStf9CljGG5QEQaDwraszWsmzcRK2jF28=
   file:
     - build/aws-dynamic-consul-catalog-linux-amd64
-    - build/aws-dynamic-consul-catalog-windows-amd64
     - build/aws-dynamic-consul-catalog-darwin-amd64
   skip_cleanup: true
   overwrite: true

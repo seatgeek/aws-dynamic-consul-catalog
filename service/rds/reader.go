@@ -1,6 +1,9 @@
 package rds
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,7 +18,13 @@ func (r *RDS) reader(prop observer.Property) {
 	logger := log.WithField("worker", "indexer")
 	logger.Info("Starting RDS index worker")
 
-	ticker := time.NewTicker(r.checkInterval)
+	ticker := time.NewTimer(r.checkInterval)
+
+	// signal handler
+	// sending a SIGUSR1 will trigger a read right away,
+	// postponing any scheduled runs
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGUSR1)
 
 	// read right away on start
 	r.read(prop, logger)
@@ -24,8 +33,14 @@ func (r *RDS) reader(prop observer.Property) {
 		select {
 		case <-r.quitCh:
 			return
+
+		case <-sigs:
+			r.read(prop, logger)          // run updater
+			ticker.Reset(r.checkInterval) // schedule new timed run
+
 		case <-ticker.C:
-			r.read(prop, logger)
+			r.read(prop, logger)          // run updater
+			ticker.Reset(r.checkInterval) // schedule new timed run
 		}
 	}
 }

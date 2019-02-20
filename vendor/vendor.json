@@ -227,6 +227,12 @@
 			"revisionTime": "2017-04-18T23:29:47Z"
 		},
 		{
+			"checksumSHA1": "XAGndbmKH374GMFHOrgi5MThUYQ=",
+			"path": "github.com/seatgeek/logrus-gelf-formatter",
+			"revision": "ce23ecb3f367c85481346bcc4e4ca65d4c5ca262",
+			"revisionTime": "2018-08-29T22:07:24Z"
+		},
+		{
 			"checksumSHA1": "x/C9sWJ33glBGKgGvb8VvUQvR8s=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
