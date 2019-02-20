@@ -271,7 +271,7 @@ func (r *RDS) identicalService(a, b *config.Service, logger *log.Entry) bool {
 		return false
 	}
 
-	if !r.difference(a.ServiceTags, b.ServiceTags) {
+	if r.isDifferent(a.ServiceTags, b.ServiceTags) {
 		logger.Infof("ServiceTags are not identical (%+v vs %+v)", a.ServiceTags, b.ServiceTags)
 		return false
 	}
@@ -300,7 +300,7 @@ func (r *RDS) getDifference(slice1, slice2 []string) []string {
 	return diff
 }
 
-func (r *RDS) difference(slice1, slice2 []string) bool {
+func (r *RDS) isDifferent(slice1, slice2 []string) bool {
 	if len(r.getDifference(slice1, slice2)) > 0 {
 		return true
 	}
