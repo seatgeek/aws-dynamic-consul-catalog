@@ -74,6 +74,7 @@ func processCatalog(n internalNode) config.Services {
 			ServiceTags:    service.Tags,
 			ServiceAddress: service.Address,
 			ServicePort:    service.Port,
+			ServiceMeta:    service.Meta,
 		}
 	}
 
