@@ -35,8 +35,8 @@ func (r *RDS) reader(prop observer.Property) {
 			return
 
 		case <-sigs:
-			ticker.Reset(r.checkInterval) // schedule new timed run (postpone any potential upcoming schedule)
 			r.read(prop, logger)          // run updater
+			ticker.Reset(r.checkInterval) // schedule new timed run
 
 		case <-ticker.C:
 			r.read(prop, logger)          // run updater
