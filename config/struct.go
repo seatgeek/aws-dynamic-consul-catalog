@@ -46,6 +46,7 @@ type Service struct {
 	ServiceAddress string
 	ServicePort    int
 	ServiceTags    []string
+	ServiceMeta    map[string]string
 	CheckID        string
 	CheckNode      string
 	CheckNotes     string
