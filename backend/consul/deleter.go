@@ -13,7 +13,7 @@ func (b *Backend) DeleteService(service, node string) {
 	}, &api.WriteOptions{})
 
 	if err != nil {
-		log.Fatalf("Could not delete consul service %s for node %s: %s", service, node, err)
+		log.Errorf("Could not delete consul service %s for node %s: %s", service, node, err)
 	}
 }
 
@@ -25,6 +25,6 @@ func (b *Backend) DeleteCheck(check, node string) {
 	}, &api.WriteOptions{})
 
 	if err != nil {
-		log.Fatalf("Could not delete consul check %s for node %s: %s", check, node, err)
+		log.Errorf("Could not delete consul check %s for node %s: %s", check, node, err)
 	}
 }

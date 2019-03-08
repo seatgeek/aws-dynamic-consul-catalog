@@ -67,6 +67,9 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	logger = logger.WithField("instance", aws.StringValue(instance.DBInstanceIdentifier))
 
 	name := r.getServiceName(instance)
+	if name == "" {
+		return
+	}
 	id := name
 
 	if *instance.DBInstanceStatus == "creating" {
@@ -226,7 +229,7 @@ func (r *RDS) getServiceName(instance *config.DBInstance) string {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
 
-	log.Fatal("Failed to find service name for " + aws.StringValue(instance.DBInstanceArn))
+	log.Errorf("Failed to find service name for " + aws.StringValue(instance.DBInstanceArn))
 	return ""
 }
 

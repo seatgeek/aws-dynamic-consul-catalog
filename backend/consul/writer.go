@@ -34,6 +34,6 @@ func (b *Backend) WriteService(service *config.Service) {
 	_, err := b.client.Catalog().Register(save, &api.WriteOptions{})
 
 	if err != nil {
-		log.Fatalf("Could not write consul catalog: %s", err)
+		log.Errorf("Could not write consul catalog: %s", err)
 	}
 }

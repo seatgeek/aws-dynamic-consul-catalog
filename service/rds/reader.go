@@ -105,7 +105,7 @@ func (r *RDS) getInstanceTags(instance *rds.DBInstance) config.Tags {
 	input := &rds.ListTagsForResourceInput{ResourceName: instance.DBInstanceArn}
 	x, err := r.rds.ListTagsForResource(input)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf(err)
 	}
 
 	res := make(config.Tags)

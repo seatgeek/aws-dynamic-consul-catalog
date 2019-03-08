@@ -84,7 +84,7 @@ func processCatalog(n internalNode) config.Services {
 		}
 
 		if _, ok := services[check.ServiceID]; !ok {
-			log.Fatalf("Could not find a service '%s' for check '%s'", check.ServiceID, check.CheckID)
+			log.Errorf("Could not find a service '%s' for check '%s'", check.ServiceID, check.CheckID)
 		}
 
 		services[check.ServiceID].CheckID = check.CheckID
