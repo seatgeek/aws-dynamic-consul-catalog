@@ -174,6 +174,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
 	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
 	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
+	service.ServiceMeta["external-source"] = "aws"
 
 	if stringInSlice(service.ServiceID, seen.Services) {
 		logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.ServiceID)
@@ -223,8 +224,8 @@ func (r *RDS) getServiceName(instance *config.DBInstance) string {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
 
-	// derive from the instance DB name
-	name := aws.StringValue(instance.DBName)
+	// derive from the instance DB Instance Identifier
+	name := aws.StringValue(instance.DBInstanceIdentifier)
 	if name != "" {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
