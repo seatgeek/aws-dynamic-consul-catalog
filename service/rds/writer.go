@@ -70,7 +70,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	if name == "" {
 		return
 	}
-	id := name
+	id := aws.StringValue(instance.DBInstanceIdentifier)
 
 	if *instance.DBInstanceStatus == "creating" {
 		logger.Warnf("Instance %s id being created, skipping for now", name)
@@ -88,12 +88,22 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	isSlave := instance.ReadReplicaSourceDBInstanceIdentifier != nil
 	isMaster := len(instance.ReadReplicaDBInstanceIdentifiers) > 0
 
+	isClusterWriter, clusterWriterTagged := instance.Tags["is-cluster-writer"]
+
 	logger.Debugf("  ID:   %s", id)
 	logger.Debugf("  Name: %s", name)
 	logger.Debugf("  Addr: %s", addr)
 	logger.Debugf("  Port: %d", port)
 
 	tags := make([]string, 0)
+	if clusterWriterTagged {
+		if isClusterWriter == "true" {
+			tags = append(tags, "clusterWriter")
+		} else {
+			tags = append(tags, "clusterReader")
+		}
+	}
+
 	if isSlave {
 		tags = append(tags, r.consulReplicaTag)
 		id = fmt.Sprintf("%s-%s-%s", id, *instance.DBInstanceIdentifier, r.consulReplicaTag)
@@ -102,6 +112,10 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	if isMaster {
 		tags = append(tags, r.consulMasterTag)
 		id = id + "-" + r.consulMasterTag
+	}
+
+	if clusterWriterTagged {
+		id = id + "-clusterwriter-" + isClusterWriter
 	}
 
 	if !isSlave && !isMaster {
@@ -157,12 +171,12 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 
 	service := &config.Service{
 		ServiceID:      id,
-		ServiceName:    name,
+		ServiceName:    id,
 		ServiceAddress: addr,
 		ServicePort:    int(port),
 		ServiceTags:    tags,
 		CheckID:        fmt.Sprintf("service:%s", id),
-		CheckNode:      r.consulNodeName,
+		CheckNode:      name,
 		CheckNotes:     fmt.Sprintf("RDS Instance Status: %s", aws.StringValue(instance.DBInstanceStatus)),
 		CheckStatus:    status,
 		CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\nAddr: %s\n\nmanaged by aws-dynamic-consul-catalog", instance.PendingModifiedValues.GoString(), addr),
@@ -174,6 +188,9 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
 	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
 	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
+	if clusterWriterTagged {
+		service.ServiceMeta["IsClusterWriter"] = isClusterWriter
+	}
 
 	if stringInSlice(service.ServiceID, seen.Services) {
 		logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.ServiceID)
@@ -223,8 +240,20 @@ func (r *RDS) getServiceName(instance *config.DBInstance) string {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
 
+	// derive from the instance DB cluster name
+	name := aws.StringValue(instance.DBClusterIdentifier)
+	if name != "" {
+		return r.servicePrefix + name + r.serviceSuffix
+	}
+
 	// derive from the instance DB name
-	name := aws.StringValue(instance.DBName)
+	name = aws.StringValue(instance.DBName)
+	if name != "" {
+		return r.servicePrefix + name + r.serviceSuffix
+	}
+
+	// derive from the instance DB instance identifier
+	name = aws.StringValue(instance.DBInstanceIdentifier)
 	if name != "" {
 		return r.servicePrefix + name + r.serviceSuffix
 	}

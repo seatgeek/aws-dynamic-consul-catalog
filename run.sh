@@ -1,0 +1,1 @@
+AWS_REGION=us-east-1 go run . --consul-service-prefix=rds_ rds --consul-master-tag=master --consul-replica-tag=replica

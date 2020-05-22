@@ -80,7 +80,18 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 
 		marker = resp.Marker
 		for _, instance := range resp.DBInstances {
-			instances = append(instances, &config.DBInstance{instance, r.getInstanceTags(instance)})
+			i := &config.DBInstance{
+				DBInstance: instance,
+				Tags:       r.getInstanceTags(instance),
+			}
+			r.augmentClusterTags(i.DBInstance, i.Tags)
+			log.WithFields(log.Fields{
+				"cluster":  aws.StringValue(i.DBClusterIdentifier),
+				"instance": aws.StringValue(i.DBInstanceIdentifier),
+				"tags":     i.Tags,
+			}).
+				Println("read instance")
+			instances = append(instances, i)
 		}
 
 		if marker == nil {
@@ -91,6 +102,26 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 
 	prop.Update(instances)
 	logger.Debug("Finished refresh of RDS information")
+}
+
+func (r *RDS) augmentClusterTags(instance *rds.DBInstance, tags config.Tags) {
+	input := &rds.DescribeDBClustersInput{DBClusterIdentifier: instance.DBClusterIdentifier}
+	output, err := r.rds.DescribeDBClusters(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, cluster := range output.DBClusters {
+		for _, member := range cluster.DBClusterMembers {
+			if aws.StringValue(member.DBInstanceIdentifier) == aws.StringValue(instance.DBInstanceIdentifier) {
+				if aws.BoolValue(member.IsClusterWriter) {
+					tags["is-cluster-writer"] = "true"
+				} else {
+					tags["is-cluster-writer"] = "false"
+				}
+				return
+			}
+		}
+	}
 }
 
 func (r *RDS) getInstanceTags(instance *rds.DBInstance) config.Tags {
@@ -115,6 +146,5 @@ func (r *RDS) getInstanceTags(instance *rds.DBInstance) config.Tags {
 	}
 
 	r.tagCache.Set(instanceArn, &res, cache.DefaultExpiration)
-
 	return res
 }
