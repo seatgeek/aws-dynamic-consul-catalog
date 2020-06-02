@@ -8,13 +8,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/rds"
-	observer "github.com/imkira/go-observer"
-	cache "github.com/patrickmn/go-cache"
+	"github.com/imkira/go-observer"
+	"github.com/patrickmn/go-cache"
 	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *RDS) reader(prop observer.Property) {
+func (r *RDS) reader(instances observer.Property) {
 	logger := log.WithField("worker", "indexer")
 	logger.Info("Starting RDS index worker")
 
@@ -26,8 +26,10 @@ func (r *RDS) reader(prop observer.Property) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGUSR1)
 
+	log.Info("-------------------------------------------------------------------------------")
+	log.Info("-------------------------------------------------------------------------------")
 	// read right away on start
-	r.read(prop, logger)
+	r.read(instances, logger)
 
 	for {
 		select {
@@ -35,17 +37,19 @@ func (r *RDS) reader(prop observer.Property) {
 			return
 
 		case <-sigs:
-			r.read(prop, logger)          // run updater
+			r.read(instances, logger)     // run updater
 			ticker.Reset(r.checkInterval) // schedule new timed run
 
 		case <-ticker.C:
-			r.read(prop, logger)          // run updater
+			log.Info("-------------------------------------------------------------------------------")
+			log.Info("-------------------------------------------------------------------------------")
+			r.read(instances, logger)     // run updater
 			ticker.Reset(r.checkInterval) // schedule new timed run
 		}
 	}
 }
 
-func (r *RDS) read(prop observer.Property, logger *log.Entry) {
+func (r *RDS) read(allInstances observer.Property, logger *log.Entry) {
 	logger.Debug("Starting refresh of RDS information")
 
 	var marker *string
@@ -89,8 +93,7 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 				"cluster":  aws.StringValue(i.DBClusterIdentifier),
 				"instance": aws.StringValue(i.DBInstanceIdentifier),
 				"tags":     i.Tags,
-			}).
-				Println("read instance")
+			}).Println("read instance")
 			instances = append(instances, i)
 		}
 
@@ -100,9 +103,10 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 		}
 	}
 
-	prop.Update(instances)
+	allInstances.Update(instances)
 	logger.Debug("Finished refresh of RDS information")
 }
+
 
 func (r *RDS) augmentClusterTags(instance *rds.DBInstance, tags config.Tags) {
 	input := &rds.DescribeDBClustersInput{DBClusterIdentifier: instance.DBClusterIdentifier}

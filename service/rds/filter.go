@@ -21,7 +21,7 @@ func (r *RDS) filter(all, filtered observer.Property) {
 
 		// wait for changes
 		case <-stream.Changes():
-			logger.Debug("Starting filtering RDS instances")
+			logger.Debug("#### Filter #### Starting filtering RDS instances")
 
 			stream.Next()
 			instances := stream.Value().([]*config.DBInstance)

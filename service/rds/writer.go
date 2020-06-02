@@ -123,55 +123,10 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		tags = append(tags, r.consulReplicaTag)
 	}
 
-	status := "passing"
-	switch aws.StringValue(instance.DBInstanceStatus) {
-	case "backing-up":
-		status = "passing"
-	case "available":
-		status = "passing"
-	case "maintenance":
-		status = "passing"
-	case "modifying":
-		status = "passing"
-	case "creating":
-		status = "critical"
-	case "deleting":
-		status = "critical"
-	case "failed":
-		status = "critical"
-	case "rebooting":
-		status = "passing"
-	case "renaming":
-		status = "critical"
-	case "restore-error":
-		status = "critical"
-	case "inaccessible-encryption-credentials":
-		status = "critical"
-	case "incompatible-credentials":
-		status = "critical"
-	case "incompatible-network":
-		status = "critical"
-	case "incompatible-option-group":
-		status = "critical"
-	case "incompatible-parameters":
-		status = "critical"
-	case "incompatible-restore":
-		status = "critical"
-	case "resetting-master-credentials":
-		status = "warning"
-	case "storage-optimization":
-		status = "passing"
-	case "storage-full":
-		status = "warning"
-	case "upgrading":
-		status = "warning"
-	default:
-		status = "passing"
-	}
-
+	status := extractStatus(aws.StringValue(instance.DBInstanceStatus))
 	service := &config.Service{
 		ServiceID:      id,
-		ServiceName:    id,
+		ServiceName:    name,
 		ServiceAddress: addr,
 		ServicePort:    int(port),
 		ServiceTags:    tags,
