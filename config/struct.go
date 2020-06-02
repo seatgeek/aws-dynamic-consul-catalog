@@ -36,6 +36,13 @@ type DBInstance struct {
 	Tags Tags
 }
 
+// DBCluster is a group of DBInstances
+type DBCluster struct {
+	*rds.DBCluster
+	Instances []*DBInstance
+	Tags      Tags
+}
+
 // Filters ...
 type Filters map[string]string
 

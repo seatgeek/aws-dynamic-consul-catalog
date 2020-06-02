@@ -90,12 +90,18 @@ func (r *RDS) Run() {
 
 	allInstances := observer.NewProperty(nil)
 	filteredInstances := observer.NewProperty(nil)
+
+	writableInstances := observer.NewProperty(nil)
+	writableClusters := observer.NewProperty(nil)
+
 	catalogState := &config.CatalogState{}
 
 	go r.backend.CatalogReader(catalogState, r.consulNodeName, r.quitCh)
 	go r.reader(allInstances)
 	go r.filter(allInstances, filteredInstances)
-	go r.writer(filteredInstances, catalogState)
+	go r.clusterize(filteredInstances, writableInstances, writableClusters)
+	go r.writer(writableInstances, catalogState)
+	go r.clusterWriter(writableClusters, catalogState)
 
 	<-r.quitCh
 }
