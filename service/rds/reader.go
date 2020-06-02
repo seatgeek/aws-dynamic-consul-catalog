@@ -26,8 +26,6 @@ func (r *RDS) reader(instances observer.Property) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGUSR1)
 
-	log.Info("-------------------------------------------------------------------------------")
-	log.Info("-------------------------------------------------------------------------------")
 	// read right away on start
 	r.read(instances, logger)
 
@@ -41,8 +39,6 @@ func (r *RDS) reader(instances observer.Property) {
 			ticker.Reset(r.checkInterval) // schedule new timed run
 
 		case <-ticker.C:
-			log.Info("-------------------------------------------------------------------------------")
-			log.Info("-------------------------------------------------------------------------------")
 			r.read(instances, logger)     // run updater
 			ticker.Reset(r.checkInterval) // schedule new timed run
 		}
@@ -89,11 +85,6 @@ func (r *RDS) read(allInstances observer.Property, logger *log.Entry) {
 				Tags:       r.getInstanceTags(instance),
 			}
 			r.augmentClusterTags(i.DBInstance, i.Tags)
-			log.WithFields(log.Fields{
-				"cluster":  aws.StringValue(i.DBClusterIdentifier),
-				"instance": aws.StringValue(i.DBInstanceIdentifier),
-				"tags":     i.Tags,
-			}).Println("read instance")
 			instances = append(instances, i)
 		}
 

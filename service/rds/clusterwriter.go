@@ -24,9 +24,6 @@ func (r *RDS) clusterWriter(inClustersProp observer.Property, state *config.Cata
 		// wait for changes
 		case <-stream.Changes():
 			state.Lock()
-
-			logger.Info("Starting Consul Catalog cluster write")
-
 			stream.Next()
 			clusters := stream.Value().([]*config.DBCluster)
 
@@ -77,7 +74,6 @@ func (r *RDS) writeClusterBackendCatalog(cluster *config.DBCluster, logger *log.
 		return
 	}
 
-	log.Infof("Creating registration for cluster: %s", name)
 	clusterStatus := extractStatus(aws.StringValue(cluster.Status))
 
 	memberRole := map[string]string{}
@@ -94,7 +90,6 @@ func (r *RDS) writeClusterBackendCatalog(cluster *config.DBCluster, logger *log.
 		for k, v := range instance.Tags {
 			tags = append(tags, fmt.Sprintf("%s-%s", k, v))
 		}
-		logger.Infof("TAGGGSZZ: %+v", tags)
 		tags = append(tags, fmt.Sprintf("cluster-rw-role-%s",
 			memberRole[aws.StringValue(instance.DBInstanceIdentifier)]))
 		service := &config.Service{

@@ -20,7 +20,7 @@ func (r *RDS) clusterize(inInstancesProp, outInstancesProp, outClustersProp obse
 
 		// wait for changes
 		case <-stream.Changes():
-			logger.Error("#### Clusterize #### Starting clusterizing RDS instances")
+			logger.Debug("Clusterizing instances")
 
 			stream.Next()
 			instances := stream.Value().([]*config.DBInstance)
@@ -36,12 +36,13 @@ func (r *RDS) clusterize(inInstancesProp, outInstancesProp, outClustersProp obse
 					continue
 				}
 
-				logger.Infof("Instance %s is part of cluster: %s", aws.StringValue(instance.DBInstanceIdentifier), clusterID)
+				logger.Debugf("Instance %s is part of cluster: %s",
+					aws.StringValue(instance.DBInstanceIdentifier), clusterID)
 				cluster, ok := clusters[clusterID]
 				if !ok {
 					rdsCluster := r.readDBCluster(clusterID)
 					if rdsCluster == nil {
-						log.Errorf("Error fetching cluster for instance: %s with ClusterID: %s",
+						log.Errorf("Error fetching cluster for instance: %s with ClusterID: %s (skipping)",
 							aws.StringValue(instance.DBInstanceIdentifier), clusterID)
 						continue
 					}
@@ -56,20 +57,15 @@ func (r *RDS) clusterize(inInstancesProp, outInstancesProp, outClustersProp obse
 				// attach this instance to the cluster...
 				cluster.Instances = append(cluster.Instances, instance)
 			}
-
 			outInstancesProp.Update(standaloneInstances)
 
-			clusterList := make([]*config.DBCluster, len(clusters))
-			i := 0
+			clusterList := []*config.DBCluster{}
 			for _, v := range clusters {
-				clusterList[i] = v
-				i++
+				clusterList = append(clusterList, v)
 			}
 			outClustersProp.Update(clusterList)
-			logger.
-				WithField("Worker", "Clusterizer").
-				Errorf("Finished clusterizing RDS instances. Clusters: %d Instances: %d",
-					len(clusters), len(instances))
+			logger.Debugf("Finished clusterizing RDS instances. Clusters: %d Instances: %d",
+				len(clusters), len(instances))
 		}
 	}
 }
