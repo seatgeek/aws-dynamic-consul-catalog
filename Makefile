@@ -14,8 +14,9 @@ install:
 	govendor sync
 
 .PHONY: build
-build: install
-	govendor sync
+build:
+	go mod vendor
+	go mod tidy
 	go install
 
 .PHONY: fmt
@@ -28,12 +29,12 @@ fmt:
 
 .PHONY: vet
 vet: fmt
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
+	@go vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
-	@echo "=> Running go tool vet $(VETARGS) ${GOFILES_NOVENDOR}"
-	@go tool vet $(VETARGS) ${GOFILES_NOVENDOR} ; if [ $$? -eq 1 ]; then \
+	@echo "=> Running go vet $(VETARGS) ${GOFILES_NOVENDOR}"
+	@go vet $(VETARGS) ${GOFILES_NOVENDOR} ; if [ $$? -eq 1 ]; then \
 		echo ""; \
 		echo "[LINT] Vet found suspicious constructs. Please check the reported constructs"; \
 		echo "and fix them if necessary before submitting the code for review."; \
@@ -52,7 +53,6 @@ dist: fmt vet
 .PHONY: docker
 docker:
 	@echo "=> build and push Docker image ..."
-	@docker login -u nbriganti@seatgeek.com -p 6FtAXCcqANvzk!7
-	docker build -f Dockerfile -t seatgeek/aws-dynamic-consul-catalog:a918899 .
-	docker tag seatgeek/aws-dynamic-consul-catalog:a918899 seatgeek/aws-dynamic-consul-catalog:v1.8.0-beta
-	docker push seatgeek/aws-dynamic-consul-catalog:v1.8.0-beta
+	docker build -f Dockerfile -t seatgeek/aws-dynamic-consul-catalog:$GIT_COMMIT_SHA .
+	docker tag seatgeek/aws-dynamic-consul-catalog:$GIT_COMMIT_SHA seatgeek/aws-dynamic-consul-catalog:v1.8.0
+	docker push seatgeek/aws-dynamic-consul-catalog:v1.8.0
