@@ -1,4 +1,4 @@
-module github/aws-dynamic-consul-catalog
+module github.com/aws-dynamic-consul-catalog
 
 go 1.22.4
 
