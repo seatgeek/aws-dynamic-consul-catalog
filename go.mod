@@ -1,4 +1,4 @@
-module github.com/aws-dynamic-consul-catalog
+module github.com/seatgeek/aws-dynamic-consul-catalog
 
 go 1.22.4
 
@@ -7,7 +7,6 @@ require (
 	github.com/hashicorp/consul/api v1.29.2
 	github.com/imkira/go-observer v1.0.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/seatgeek/aws-dynamic-consul-catalog v1.7.2
 	github.com/seatgeek/logrus-gelf-formatter v0.0.0-20210414080842-5b05eb8ff761
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/urfave/cli.v1 v1.20.0
@@ -32,5 +31,3 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 )
-
-replace github/seatgeek/aws-dynamic-consul-catalog => github.com/seatgeek/aws-dynamic-consul-catalog v1.8.0
