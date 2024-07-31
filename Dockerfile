@@ -1,4 +1,4 @@
-FROM ubuntu:trusty
+FROM 093535234988.dkr.ecr.us-east-1.amazonaws.com/go-build:1.22-focal
 
 RUN apt-get update \
     && apt-get install -y ssl-cert ca-certificates \

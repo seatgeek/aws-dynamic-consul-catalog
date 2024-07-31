@@ -1,13 +1,15 @@
 package rds
 
 import (
+	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	// "github.com/aws/aws-sdk-go/aws/credentials"
+	// "github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	// "github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
 	observer "github.com/imkira/go-observer"
@@ -57,13 +59,15 @@ func New(c *cli.Context) *RDS {
 
 	sess := session.Must(session.NewSession())
 
-	creds := credentials.NewChainCredentials(
-		[]credentials.Provider{
-			&credentials.EnvProvider{},
-			&ec2rolecreds.EC2RoleProvider{
-				Client: ec2metadata.New(sess),
-			},
-		})
+	// creds := credentials.NewChainCredentials(
+	// 	[]credentials.Provider{
+	// 		&credentials.EnvProvider{},
+	// 		&ec2rolecreds.EC2RoleProvider{
+	// 			Client: ec2metadata.New(sess),
+	// 		},
+	// 	})
+
+	creds := stscreds.NewCredentials(sess, os.Getenv("AWS_ROLE_ARN"))
 
 	return &RDS{
 		rds: rds.New(session.Must(session.NewSession(&aws.Config{
