@@ -53,6 +53,7 @@ dist: fmt vet
 .PHONY: docker
 docker:
 	@echo "=> build and push Docker image ..."
-	docker build -f Dockerfile -t seatgeek/aws-dynamic-consul-catalog:$GIT_COMMIT_SHA .
-	docker tag seatgeek/aws-dynamic-consul-catalog:$GIT_COMMIT_SHA seatgeek/aws-dynamic-consul-catalog:v1.8.0
-	docker push seatgeek/aws-dynamic-consul-catalog:v1.8.0
+	@docker login -u $(DOCKER_USER) -p $(DOCKER_PASS)
+	docker build -f Dockerfile -t seatgeek/aws-dynamic-consul-catalog:$(COMMIT) .
+	docker tag seatgeek/aws-dynamic-consul-catalog:$(COMMIT) seatgeek/aws-dynamic-consul-catalog:$(TAG)
+	docker push seatgeek/aws-dynamic-consul-catalog:$(TAG)
