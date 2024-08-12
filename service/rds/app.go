@@ -4,10 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
 	observer "github.com/imkira/go-observer"
@@ -55,20 +51,8 @@ func New(c *cli.Context) *RDS {
 		log.Fatalf("log-format value %s is not a valid option (json or text)", logFormat)
 	}
 
-	sess := session.Must(session.NewSession())
-
-	creds := credentials.NewChainCredentials(
-		[]credentials.Provider{
-			&credentials.EnvProvider{},
-			&ec2rolecreds.EC2RoleProvider{
-				Client: ec2metadata.New(sess),
-			},
-		})
-
 	return &RDS{
-		rds: rds.New(session.Must(session.NewSession(&aws.Config{
-			Credentials: creds,
-		}))),
+		rds: rds.New(session.Must(session.NewSession())),
 		backend:          cc.NewBackend(),
 		instanceFilters:  config.ProcessFilters(c.GlobalStringSlice("instance-filter")),
 		tagFilters:       config.ProcessFilters(c.GlobalStringSlice("tag-filter")),

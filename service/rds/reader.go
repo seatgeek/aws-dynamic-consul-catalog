@@ -66,6 +66,7 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 			MaxRecords: aws.Int64(100),
 		})
 		if err != nil {
+			logger.Debugf("Using AWS ARN %s", os.Getenv("AWS_ROLE_ARN"))
 			logger.Errorf("Could not read RDS instances: %+v", err)
 			time.Sleep(5 * time.Second)
 			errorCount = errorCount + 1
