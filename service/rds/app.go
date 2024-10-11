@@ -1,15 +1,16 @@
 package rds
 
 import (
+	"context"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/rds"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	observer "github.com/imkira/go-observer"
 	cache "github.com/patrickmn/go-cache"
 	cc "github.com/seatgeek/aws-dynamic-consul-catalog/backend/consul"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	gelf "github.com/seatgeek/logrus-gelf-formatter"
 	log "github.com/sirupsen/logrus"
 	cli "gopkg.in/urfave/cli.v1"
@@ -17,7 +18,7 @@ import (
 
 // RDS ...
 type RDS struct {
-	rds              *rds.RDS
+	rds              *rds.Client
 	backend          config.Backend
 	logger           log.Entry
 	instanceFilters  config.Filters
@@ -35,6 +36,11 @@ type RDS struct {
 
 // New ...
 func New(c *cli.Context) *RDS {
+	cfg, err := awsconfig.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatalf("failed to load SDK configuration, %v", err)
+	}
+
 	logLevel, err := log.ParseLevel(strings.ToUpper(c.GlobalString("log-level")))
 	if err != nil {
 		log.Fatalf("%s (%s)", err, c.GlobalString("log-level"))
@@ -52,19 +58,19 @@ func New(c *cli.Context) *RDS {
 	}
 
 	return &RDS{
-		rds: rds.New(session.Must(session.NewSession())),
+		rds:              rds.NewFromConfig(cfg),
 		backend:          cc.NewBackend(),
-		instanceFilters:  config.ProcessFilters(c.GlobalStringSlice("instance-filter")),
-		tagFilters:       config.ProcessFilters(c.GlobalStringSlice("tag-filter")),
+		instanceFilters:  config.ProcessFilters(c.StringSlice("rds_instance-filter")),
+		tagFilters:       config.ProcessFilters(c.StringSlice("rds_tag-filter")),
 		tagCache:         cache.New(c.Duration("rds-tag-cache-time"), 10*time.Minute),
 		checkInterval:    c.GlobalDuration("check-interval"),
 		quitCh:           make(chan int),
 		onDuplicate:      c.GlobalString("on-duplicate"),
-		servicePrefix:    c.GlobalString("consul-service-prefix"),
-		serviceSuffix:    c.GlobalString("consul-service-suffix"),
-		consulNodeName:   c.String("consul-node-name"),
-		consulMasterTag:  c.String("consul-master-tag"),
-		consulReplicaTag: c.String("consul-replica-tag"),
+		servicePrefix:    c.String("rds_consul-service-prefix"),
+		serviceSuffix:    c.String("rds_consul-service-suffix"),
+		consulNodeName:   c.String("rds_consul-node-name"),
+		consulMasterTag:  c.String("rds_consul-master-tag"),
+		consulReplicaTag: c.String("rds_consul-replica-tag"),
 	}
 }
 

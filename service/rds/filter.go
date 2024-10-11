@@ -3,14 +3,14 @@ package rds
 import (
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
+	aws "github.com/aws/aws-sdk-go-v2/aws"
 	observer "github.com/imkira/go-observer"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
 func (r *RDS) filter(all, filtered observer.Property) {
-	logger := log.WithField("worker", "filter")
+	logger := log.WithField("rds", "filter")
 	logger.Info("Starting RDS instance filter worker")
 	stream := all.Observe()
 
@@ -54,21 +54,23 @@ func (r *RDS) filterByInstanceData(instance *config.DBInstance, filters config.F
 	for k, filter := range filters {
 		switch k {
 		case "AvailabilityZone":
-			return r.matches(filter, aws.StringValue(instance.AvailabilityZone))
+			return r.matches(filter, aws.ToString(instance.AvailabilityZone))
 		case "DBInstanceArn":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceArn))
+			return r.matches(filter, aws.ToString(instance.DBInstanceArn))
 		case "DBInstanceClass":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceClass))
+			return r.matches(filter, aws.ToString(instance.DBInstanceClass))
 		case "DBInstanceIdentifier":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceIdentifier))
+			return r.matches(filter, aws.ToString(instance.DBInstanceIdentifier))
+		case "DBClusterIdentifier":
+			return r.matches(filter, aws.ToString(instance.DBClusterIdentifier))
 		case "DBInstanceStatus":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceStatus))
+			return r.matches(filter, aws.ToString(instance.DBInstanceStatus))
 		case "Engine":
-			return r.matches(filter, aws.StringValue(instance.Engine))
+			return r.matches(filter, aws.ToString(instance.Engine))
 		case "EngineVersion":
-			return r.matches(filter, aws.StringValue(instance.EngineVersion))
+			return r.matches(filter, aws.ToString(instance.EngineVersion))
 		case "VpcId":
-			return r.matches(filter, aws.StringValue(instance.DBSubnetGroup.VpcId))
+			return r.matches(filter, aws.ToString(instance.DBSubnetGroup.VpcId))
 		default:
 			log.Fatalf("Unknown instance filter key %s (%s)", k, filter)
 		}
