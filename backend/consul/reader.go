@@ -35,7 +35,7 @@ func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName strin
 			return
 
 		default:
-			logger.Info("Waiting for Node information to change")
+			logger.Infof("Waiting for %s information to change", consulNodeName)
 
 			var newNode internalNode
 
