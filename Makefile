@@ -17,7 +17,6 @@ install:
 build:
 	go mod vendor
 	go mod tidy
-	go install
 
 .PHONY: fmt
 fmt:
