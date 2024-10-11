@@ -3,7 +3,8 @@ package config
 import (
 	"sync"
 
-	"github.com/aws/aws-sdk-go/service/rds"
+	kafkaTypes "github.com/aws/aws-sdk-go-v2/service/kafka/types"
+	rdsTypes "github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
 
 // Backend ...
@@ -32,8 +33,20 @@ type Tags map[string]string
 
 // DBInstance ...
 type DBInstance struct {
-	*rds.DBInstance
+	*rdsTypes.DBInstance
 	Tags Tags
+}
+
+// Kafka ...
+type MSKCluster struct {
+	*kafkaTypes.Cluster
+	Tags    Tags
+	Brokers []Brokers
+}
+
+type Brokers struct {
+	Host string
+	Port int
 }
 
 // Filters ...

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	consul "github.com/hashicorp/consul/api"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,7 +19,7 @@ type internalNode struct {
 
 // CatalogReader ...
 func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName string, quitCh chan int) {
-	logger := log.WithField("worker", "consul-reader")
+	logger := log.WithField("consul", "CatalogReader")
 	logger.Info("Starting Consul catalog reader")
 
 	raw := b.client.Raw()
@@ -35,13 +35,12 @@ func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName strin
 			return
 
 		default:
-			logger.Debug("Waiting for Node information to change")
+			logger.Info("Waiting for Node information to change")
 
 			var newNode internalNode
 
 			meta, err := raw.Query("/v1/internal/ui/node/"+consulNodeName, &newNode, q)
 			if err != nil {
-				logger.Errorf("unable to fetch Consul node information: %s", err)
 				time.Sleep(10 * time.Second)
 				continue
 			}
@@ -50,11 +49,11 @@ func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName strin
 			localWaitIndex := q.WaitIndex
 
 			if remoteWaitIndex == localWaitIndex {
-				logger.Debugf("Wait index is unchanged (%d == %d)", localWaitIndex, remoteWaitIndex)
+				logger.Infof("Wait index is unchanged (%d == %d)", localWaitIndex, remoteWaitIndex)
 				continue
 			}
 
-			logger.Debugf("Wait index is changed (%d <> %d)", localWaitIndex, remoteWaitIndex)
+			logger.Infof("Wait index is changed (%d <> %d)", localWaitIndex, remoteWaitIndex)
 			q.WaitIndex = remoteWaitIndex
 
 			state.Lock()

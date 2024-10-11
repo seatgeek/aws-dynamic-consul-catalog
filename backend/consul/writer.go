@@ -2,12 +2,15 @@ package consul
 
 import (
 	api "github.com/hashicorp/consul/api"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
 // WriteService ...
 func (b *Backend) WriteService(service *config.Service) {
+	logger := log.WithField("consul", "WriteService")
+	logger.Info("Starting Consul catalog writer")
+
 	save := &api.CatalogRegistration{
 		Node:    service.CheckNode,
 		Address: service.ServiceAddress,
