@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.2
 	github.com/aws/aws-sdk-go-v2/config v1.27.43
+	github.com/aws/aws-sdk-go-v2/service/elasticache v1.43.0
 	github.com/aws/aws-sdk-go-v2/service/kafka v1.38.2
 	github.com/aws/aws-sdk-go-v2/service/rds v1.87.2
 	github.com/hashicorp/consul/api v1.29.2
