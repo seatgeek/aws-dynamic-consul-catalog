@@ -20,7 +20,6 @@ import (
 type RDS struct {
 	rds              *rds.Client
 	backend          config.Backend
-	logger           log.Entry
 	instanceFilters  config.Filters
 	tagFilters       config.Filters
 	tagCache         *cache.Cache
