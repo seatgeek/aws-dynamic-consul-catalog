@@ -70,7 +70,7 @@ func New(c *cli.Context) *ELASTICACHE {
 
 // Run ...
 func (r *ELASTICACHE) Run() {
-	log.Debug("Starting ELASTICACHE app")
+	log.Info("Starting ELASTICACHE app")
 
 	allInstances := observer.NewProperty(nil)
 	filteredInstances := observer.NewProperty(nil)

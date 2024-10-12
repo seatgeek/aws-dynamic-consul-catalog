@@ -70,7 +70,7 @@ func New(c *cli.Context) *KAFKA {
 
 // Run ...
 func (r *KAFKA) Run() {
-	log.Debug("Starting KAFKA app")
+	log.Info("Starting KAFKA app")
 
 	allInstances := observer.NewProperty(nil)
 	filteredInstances := observer.NewProperty(nil)
