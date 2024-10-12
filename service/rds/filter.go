@@ -11,7 +11,7 @@ import (
 
 func (r *RDS) filter(all, filtered observer.Property) {
 	logger := log.WithField("rds", "filter")
-	logger.Info("Starting RDS instance filter worker")
+	logger.Debug("Starting RDS instance filter worker")
 	stream := all.Observe()
 
 	for {

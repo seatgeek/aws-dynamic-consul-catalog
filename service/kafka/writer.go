@@ -17,7 +17,7 @@ var removeUpdatedTimeRegexp = regexp.MustCompile("\n\nLast update: .+")
 
 func (r *KAFKA) writer(prop observer.Property, state *config.CatalogState) {
 	logger := log.WithField("kafka", "writer")
-	logger.Info("Starting KAFKA Consul Catalog writer")
+	logger.Debug("Starting KAFKA Consul Catalog writer")
 
 	stream := prop.Observe()
 

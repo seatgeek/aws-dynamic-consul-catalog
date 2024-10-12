@@ -11,7 +11,7 @@ import (
 
 func (r *KAFKA) filter(all, filtered observer.Property) {
 	logger := log.WithField("kafka", "filter")
-	logger.Info("Starting KAFKA instance filter worker")
+	logger.Debug("Starting KAFKA instance filter worker")
 
 	stream := all.Observe()
 

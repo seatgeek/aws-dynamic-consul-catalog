@@ -19,7 +19,7 @@ import (
 
 func (r *KAFKA) reader(prop observer.Property) {
 	logger := log.WithField("kafka", "reader")
-	logger.Info("Starting KAFKA index worker")
+	logger.Debug("Starting KAFKA index worker")
 
 	ticker := time.NewTimer(r.checkInterval)
 
@@ -115,9 +115,9 @@ func (r *KAFKA) getBrokers(instance *kafkatypes.Cluster) []config.Brokers {
 
 	res := []config.Brokers{}
 
-	log.Infof("Adding brokers for cluster %s", clusterArn)
+	log.Debugf("Adding brokers for cluster %s", clusterArn)
 	if result != nil {
-		log.Infof("BootstrapBrokerStringSaslScram: %s", aws.ToString(result.BootstrapBrokerStringSaslScram))
+		log.Debugf("BootstrapBrokerStringSaslScram: %s", aws.ToString(result.BootstrapBrokerStringSaslScram))
 		brokers := aws.ToString(result.BootstrapBrokerStringSaslScram)
 		for _, broker := range strings.Split(brokers, ",") {
 			res = append(res, config.Brokers{

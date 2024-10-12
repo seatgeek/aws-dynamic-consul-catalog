@@ -20,7 +20,7 @@ type internalNode struct {
 // CatalogReader ...
 func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName string, quitCh chan int) {
 	logger := log.WithField("consul", "CatalogReader")
-	logger.Info("Starting Consul catalog reader")
+	logger.Debug("Starting Consul catalog reader")
 
 	raw := b.client.Raw()
 

@@ -11,7 +11,7 @@ import (
 )
 
 func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
-	logger.Info("Starting RDS Consul writeBackendCatalog")
+	logger.Debug("Starting RDS Consul writeBackendCatalog")
 
 	name := aws.ToString(instance.RDSInstance.Engine) + "_" + aws.ToString(instance.RDSInstance.DBInstanceIdentifier)
 	if name == "" {

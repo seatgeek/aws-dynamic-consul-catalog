@@ -9,7 +9,7 @@ import (
 // WriteService ...
 func (b *Backend) WriteService(service *config.Service) {
 	logger := log.WithField("consul", "WriteService")
-	logger.Info("Starting Consul catalog writer")
+	logger.Debug("Starting Consul catalog writer")
 
 	save := &api.CatalogRegistration{
 		Node:    service.CheckNode,

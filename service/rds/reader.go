@@ -17,7 +17,7 @@ import (
 
 func (r *RDS) reader(prop observer.Property) {
 	logger := log.WithField("rds", "reader")
-	logger.Info("Starting RDS reader")
+	logger.Debug("Starting RDS reader")
 
 	ticker := time.NewTimer(r.checkInterval)
 
@@ -88,7 +88,7 @@ func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 
 func (r *RDS) fetchRDSResources() (*config.RDSResources, error) {
 	logger := log.WithField("rds", "fetchRDSResources")
-	logger.Info("Starting RDS fetchRDSResources")
+	logger.Debug("Starting RDS fetchRDSResources")
 	resources := &config.RDSResources{}
 	var marker *string
 	pages := 0

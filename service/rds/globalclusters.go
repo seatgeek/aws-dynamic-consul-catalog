@@ -11,7 +11,7 @@ package rds
 // )
 
 // func (r *RDS) writeBackendCatalogGlobalClusters(globalcluster *config.RDSGlobalCluster, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
-// 	logger.Info("Starting RDS Consul writeBackendCatalog")
+// 	logger.Debug("Starting RDS Consul writeBackendCatalog")
 
 // 	name := r.getGlobalClustersServiceName(globalcluster)
 // 	if name == "" {

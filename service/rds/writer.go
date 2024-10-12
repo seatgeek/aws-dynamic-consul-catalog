@@ -13,7 +13,7 @@ var removeUpdatedTimeRegexp = regexp.MustCompile("\n\nLast update: .+")
 
 func (r *RDS) writer(prop observer.Property, state *config.CatalogState) {
 	logger := log.WithField("rds", "writer")
-	logger.Info("Starting RDS Consul Catalog writer")
+	logger.Debug("Starting RDS Consul Catalog writer")
 
 	stream := prop.Observe()
 
