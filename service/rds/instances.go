@@ -13,7 +13,7 @@ import (
 func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
 	logger.Debug("Starting RDS Consul writeBackendCatalog")
 
-	name := aws.ToString(instance.RDSInstance.Engine) + "_" + aws.ToString(instance.RDSInstance.DBInstanceIdentifier)
+	name := aws.ToString(instance.RDSInstance.DBInstanceIdentifier)
 	if name == "" {
 		return
 	}
@@ -58,45 +58,11 @@ func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger
 
 	status := "passing"
 	switch aws.ToString(instance.RDSInstance.DBInstanceStatus) {
-	case "backing-up":
+	case "backing-up", "available", "maintenance", "modifying", "rebooting", "storage-optimization":
 		status = "passing"
-	case "available":
-		status = "passing"
-	case "maintenance":
-		status = "passing"
-	case "modifying":
-		status = "passing"
-	case "creating":
+	case "creating", "deleting", "failed", "renaming", "restore-error", "inaccessible-encryption-credentials", "incompatible-credentials", "incompatible-network", "incompatible-option-group", "incompatible-parameters", "incompatible-restore":
 		status = "critical"
-	case "deleting":
-		status = "critical"
-	case "failed":
-		status = "critical"
-	case "rebooting":
-		status = "passing"
-	case "renaming":
-		status = "critical"
-	case "restore-error":
-		status = "critical"
-	case "inaccessible-encryption-credentials":
-		status = "critical"
-	case "incompatible-credentials":
-		status = "critical"
-	case "incompatible-network":
-		status = "critical"
-	case "incompatible-option-group":
-		status = "critical"
-	case "incompatible-parameters":
-		status = "critical"
-	case "incompatible-restore":
-		status = "critical"
-	case "resetting-master-credentials":
-		status = "warning"
-	case "storage-optimization":
-		status = "passing"
-	case "storage-full":
-		status = "warning"
-	case "upgrading":
+	case "resetting-master-credentials", "upgrading", "storage-full":
 		status = "warning"
 	default:
 		status = "passing"
@@ -164,21 +130,3 @@ func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger
 	service.CheckOutput = service.CheckOutput + fmt.Sprintf("\n\nLast update: %s", time.Now().Format(time.RFC1123Z))
 	r.backend.WriteService(service)
 }
-
-// func (r *RDS) getInstancesServiceName(instance *config.RDSInstances) string {
-// 	logger := log.WithField("rds", "getInstancesServiceName")
-// 	logger.Info("Starting RDS Consul getInstancesServiceName")
-// 	// prefer the consul_service_name from instance tags
-// 	if name, ok := instance.Tags["consul_service_name"]; ok {
-// 		return r.servicePrefix + name + r.serviceSuffix
-// 	}
-
-// 	// derive from the instance DB name
-// 	var name string
-// 	if name != "" {
-// 		return r.servicePrefix + name + r.serviceSuffix
-// 	}
-
-// 	log.Errorf("Failed to find instance service name for " + aws.ToString(instance.RDSInstance.DBInstanceIdentifier))
-// 	return aws.ToString(instance.RDSInstance.DBInstanceIdentifier)
-// }

@@ -36,21 +36,6 @@ type RDSInstances struct {
 	RDSInstance *rdsTypes.DBInstance
 	Tags        Tags
 }
-type RDSClusters struct {
-	RDSCluster *rdsTypes.DBCluster
-	Tags       Tags
-}
-type RDSGlobalCluster struct {
-	RDSGlobalCluster *rdsTypes.GlobalCluster
-	Tags             Tags
-}
-
-type RDSResources struct {
-	DBInstances    []rdsTypes.DBInstance
-	DBClusters     []rdsTypes.DBCluster
-	GlobalClusters []rdsTypes.GlobalCluster
-	Tags           Tags
-}
 
 // Kafka ...
 type MSKCluster struct {

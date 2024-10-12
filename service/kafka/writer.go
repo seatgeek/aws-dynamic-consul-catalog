@@ -66,12 +66,8 @@ func (r *KAFKA) writer(prop observer.Property, state *config.CatalogState) {
 func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
 
 	logger = logger.WithField("instance", aws.ToString(instance.ClusterName))
-	logger.Debug("Starting writeBackendCatalog ------------------")
 
-	name := r.getServiceName(instance)
-	if name == "" {
-		return
-	}
+	name := aws.ToString(instance.ClusterName)
 
 	if *instance.ClusterName == "creating" {
 		logger.Warnf("Instance %s is being created, skipping for now", name)
@@ -93,12 +89,12 @@ func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Ent
 		tags := make([]string, 0)
 
 		status := "passing"
-		switch aws.ToString(instance.ClusterName) {
-		case "backing-up", "available", "maintenance", "modifying", "rebooting", "storage-optimization":
+		switch aws.ToString((*string)(&instance.Cluster.State)) {
+		case "ACTIVE", "MAINTENANCE", "UPDATING", "REBOOTING_BROKER":
 			status = "passing"
-		case "creating", "deleting", "failed", "renaming", "restore-error", "inaccessible-encryption-credentials", "incompatible-credentials", "incompatible-network", "incompatible-option-group", "incompatible-parameters", "incompatible-restore":
+		case "CREATING", "DELETING", "FAILED":
 			status = "critical"
-		case "resetting-master-credentials", "storage-full", "upgrading":
+		case "HEALING":
 			status = "warning"
 		default:
 			status = "passing"
@@ -162,22 +158,6 @@ func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Ent
 		service.CheckOutput = service.CheckOutput + fmt.Sprintf("\n\nLast update: %s", time.Now().Format(time.RFC1123Z))
 		r.backend.WriteService(service)
 	}
-}
-
-func (r *KAFKA) getServiceName(instance *config.MSKCluster) string {
-	// prefer the consul_service_name from instance tags
-	if name, ok := instance.Tags["consul_service_name"]; ok {
-		return r.servicePrefix + name + r.serviceSuffix
-	}
-
-	// derive from the instance DB name
-	name := aws.ToString(instance.ClusterName)
-	if name != "" {
-		return r.servicePrefix + name + r.serviceSuffix
-	}
-
-	log.Errorf("Failed to find service name for " + aws.ToString(instance.ClusterName))
-	return ""
 }
 
 func (r *KAFKA) identicalService(a, b *config.Service, logger *log.Entry) bool {

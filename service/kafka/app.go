@@ -29,8 +29,6 @@ type KAFKA struct {
 	servicePrefix   string
 	serviceSuffix   string
 	consulNodeName  string
-	// consulMasterTag  string
-	// consulReplicaTag string
 }
 
 // New ...

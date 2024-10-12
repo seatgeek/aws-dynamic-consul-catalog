@@ -52,48 +52,6 @@ func (r *RDS) writer(prop observer.Property, state *config.CatalogState) {
 						logger.Warnf("Deleting check %s", check)
 						r.backend.DeleteCheck(check, r.consulNodeName)
 					}
-				// case []*config.RDSClusters:
-				// 	clusters := stream.Value().([]*config.RDSClusters)
-				// 	seen := state.Services.GetSeen()
-
-				// 	found := &config.SeenCatalog{
-				// 		Services: make([]string, 0),
-				// 		Checks:   make([]string, 0),
-				// 	}
-
-				// 	for _, cluster := range clusters {
-				// 		r.writeBackendCatalogClusters(cluster, logger, state, found)
-				// 	}
-				// 	for _, service := range r.getDifference(seen.Services, found.Services) {
-				// 		logger.Warnf("Deleting service %s", service)
-				// 		r.backend.DeleteService(service, r.consulNodeName)
-				// 	}
-
-				// 	for _, check := range r.getDifference(seen.Checks, found.Checks) {
-				// 		logger.Warnf("Deleting check %s", check)
-				// 		r.backend.DeleteCheck(check, r.consulNodeName)
-				// 	}
-				// case []*config.RDSGlobalCluster:
-				// 	globalclusters := stream.Value().([]*config.RDSGlobalCluster)
-				// 	seen := state.Services.GetSeen()
-
-				// 	found := &config.SeenCatalog{
-				// 		Services: make([]string, 0),
-				// 		Checks:   make([]string, 0),
-				// 	}
-
-				// 	for _, globalcluster := range globalclusters {
-				// 		r.writeBackendCatalogGlobalClusters(globalcluster, logger, state, found)
-				// 	}
-				// 	for _, service := range r.getDifference(seen.Services, found.Services) {
-				// 		logger.Warnf("Deleting service %s", service)
-				// 		r.backend.DeleteService(service, r.consulNodeName)
-				// 	}
-
-				// 	for _, check := range r.getDifference(seen.Checks, found.Checks) {
-				// 		logger.Warnf("Deleting check %s", check)
-				// 		r.backend.DeleteCheck(check, r.consulNodeName)
-				// 	}
 				default:
 					log.Printf("Unexpected type %T", v)
 				}
