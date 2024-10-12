@@ -65,26 +65,23 @@ func (r *KAFKA) writer(prop observer.Property, state *config.CatalogState) {
 
 func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
 
-	logger = logger.WithField("instance", aws.ToString(instance.ClusterName))
+	logger = logger.WithField("instance", aws.ToString(instance.Cluster.ClusterName))
 
-	name := aws.ToString(instance.ClusterName)
+	name := aws.ToString(instance.Cluster.ClusterName)
 
-	if *instance.ClusterName == "creating" {
+	if *instance.Cluster.ClusterName == "creating" {
 		logger.Warnf("Instance %s is being created, skipping for now", name)
 		return
 	}
 
 	if instance.Brokers == nil {
-		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %s", name, *instance.ClusterName)
+		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %s", name, *instance.Cluster.ClusterName)
 		return
 	}
 
 	for i, broker := range instance.Brokers {
 		addr := broker.Host
 		port := broker.Port
-
-		logger.Debugf("  Addr: %s", addr)
-		logger.Debugf("  Port: %d", port)
 
 		tags := make([]string, 0)
 
@@ -109,13 +106,13 @@ func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Ent
 			ServiceTags:    tags,
 			CheckID:        fmt.Sprintf("service:%s", serviceID),
 			CheckNode:      r.consulNodeName,
-			CheckNotes:     fmt.Sprintf("KAFKA Instance Status: %s", aws.ToString(instance.ClusterName)),
+			CheckNotes:     fmt.Sprintf("KAFKA Instance Status: %s", aws.ToString(instance.Cluster.ClusterName)),
 			CheckStatus:    status,
-			CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\n\nmanaged by aws-dynamic-consul-catalog", aws.ToString(instance.ClusterName)),
+			CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\n\nmanaged by aws-dynamic-consul-catalog", aws.ToString(instance.Cluster.ClusterName)),
 		}
 
 		service.ServiceMeta = make(map[string]string)
-		service.ServiceMeta["ClusterName"] = aws.ToString(instance.ClusterName)
+		service.ServiceMeta["ClusterName"] = aws.ToString(instance.Cluster.ClusterName)
 
 		if stringInSlice(service.ServiceID, seen.Services) {
 			logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' KAFKA tag with same Replication Role", service.ServiceID)

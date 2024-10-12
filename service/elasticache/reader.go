@@ -4,14 +4,11 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	elasticache "github.com/aws/aws-sdk-go-v2/service/elasticache"
-	elasticachetypes "github.com/aws/aws-sdk-go-v2/service/elasticache/types"
 	observer "github.com/imkira/go-observer"
 	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
@@ -53,7 +50,7 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 
 	var marker *string
 	pages := 0
-	instances := make([]*config.MSKCluster, 0)
+	instances := make([]*config.Elasticache, 0)
 	errorCount := 0
 
 	for {
@@ -64,9 +61,10 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 			logger.Debug("Reading ELASTICACHE information page 1")
 		}
 
-		resp, err := r.elasticache.ListClustersV2(context.TODO(), &elasticache.ListClustersV2Input{
-			NextToken:  marker,
-			MaxResults: aws.Int32(100),
+		resp, err := r.elasticache.DescribeCacheClusters(context.TODO(), &elasticache.DescribeCacheClustersInput{
+			Marker:            marker,
+			MaxRecords:        aws.Int32(100),
+			ShowCacheNodeInfo: aws.Bool(true),
 		})
 		if err != nil {
 			logger.Debugf("Using AWS ARN %s", os.Getenv("AWS_ROLE_ARN"))
@@ -82,12 +80,11 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 		}
 		errorCount = 0
 
-		marker = resp.NextToken
-		for _, instance := range resp.ClusterInfoList {
-			instances = append(instances, &config.MSKCluster{
-				Cluster: &instance,
-				Tags:    instance.Tags,
-				Brokers: r.getBrokers(&instance),
+		marker = resp.Marker
+		for _, instance := range resp.CacheClusters {
+			instances = append(instances, &config.Elasticache{
+				CacheCluster: &instance,
+				// Tags:       instance.
 			})
 		}
 
@@ -101,38 +98,38 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 	logger.Debug("Finished refresh of ELASTICACHE information")
 }
 
-func (r *ELASTICACHE) getBrokers(instance *elasticachetypes.Cluster) []config.Brokers {
-	clusterArn := aws.ToString(instance.ClusterArn)
+// func (r *ELASTICACHE) getBrokers(instance *elasticachetypes.CacheCluster) []config.Brokers {
+// 	clusterArn := aws.ToString(instance.ClusterArn)
 
-	input := &elasticache.GetBootstrapBrokersInput{
-		ClusterArn: aws.String(clusterArn),
-	}
+// 	input := &elasticache.GetBootstrapBrokersInput{
+// 		ClusterArn: aws.String(clusterArn),
+// 	}
 
-	result, err := r.elasticache.GetBootstrapBrokers(context.TODO(), input)
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	result, err := r.elasticache.GetBootstrapBrokers(context.TODO(), input)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	res := []config.Brokers{}
+// 	res := []config.Brokers{}
 
-	log.Debugf("Adding brokers for cluster %s", clusterArn)
-	if result != nil {
-		log.Debugf("BootstrapBrokerStringSaslScram: %s", aws.ToString(result.BootstrapBrokerStringSaslScram))
-		brokers := aws.ToString(result.BootstrapBrokerStringSaslScram)
-		for _, broker := range strings.Split(brokers, ",") {
-			res = append(res, config.Brokers{
-				Host: strings.Split(broker, ":")[0],
-				Port: func() int {
-					port, err := strconv.Atoi(strings.Split(broker, ":")[1])
-					if err != nil {
-						log.Fatalf("Invalid port number: %v", err)
-					}
-					return port
-				}(),
-			})
-			log.Infof("Adding broker %s", broker)
-		}
-	}
+// 	log.Debugf("Adding brokers for cluster %s", clusterArn)
+// 	if result != nil {
+// 		log.Debugf("BootstrapBrokerStringSaslScram: %s", aws.ToString(result.BootstrapBrokerStringSaslScram))
+// 		brokers := aws.ToString(result.BootstrapBrokerStringSaslScram)
+// 		for _, broker := range strings.Split(brokers, ",") {
+// 			res = append(res, config.Brokers{
+// 				Host: strings.Split(broker, ":")[0],
+// 				Port: func() int {
+// 					port, err := strconv.Atoi(strings.Split(broker, ":")[1])
+// 					if err != nil {
+// 						log.Fatalf("Invalid port number: %v", err)
+// 					}
+// 					return port
+// 				}(),
+// 			})
+// 			log.Infof("Adding broker %s", broker)
+// 		}
+// 	}
 
-	return res
-}
+// 	return res
+// }

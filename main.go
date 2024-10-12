@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/seatgeek/aws-dynamic-consul-catalog/service/elasticache"
 	"github.com/seatgeek/aws-dynamic-consul-catalog/service/kafka"
 	"github.com/seatgeek/aws-dynamic-consul-catalog/service/rds"
 	cli "gopkg.in/urfave/cli.v1"
@@ -148,26 +149,77 @@ func main() {
 		},
 	}
 
+	elasticacheCommand := cli.Command{
+		Name:  "elasticache",
+		Usage: "Run the script",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "elasticache_consul-node-name",
+				Usage:  "Consul catalog node name",
+				Value:  "elasticache",
+				EnvVar: "ELASTICACHE_CONSUL_NODE_NAME",
+			},
+			cli.DurationFlag{
+				Name:   "elasticache-tag-cache-time",
+				Usage:  "The time KAFKA tags should be cached (eg. 30s, 1h, 1h10m, 1d)",
+				EnvVar: "ELASTICACHE_TAG_CACHE_TIME",
+				Value:  30 * time.Minute,
+			},
+			cli.StringSliceFlag{
+				Name:   "elasticache_instance-filter",
+				Usage:  "AWS filters",
+				EnvVar: "ELASTICACHE_INSTANCE_FILTER",
+			},
+			cli.StringSliceFlag{
+				Name:   "elasticache_tag-filter",
+				Usage:  "AWS tag filters",
+				EnvVar: "ELASTICACHE_TAG_FILTER",
+			},
+			cli.StringFlag{
+				Name:   "elasticache_consul-service-prefix",
+				Usage:  "Consul catalog service prefix",
+				EnvVar: "ELASTICACHE_CONSUL_SERVICE_PREFIX",
+				Value:  "",
+			},
+			cli.StringFlag{
+				Name:   "elasticache_consul-service-suffix",
+				Usage:  "Consul catalog service suffix",
+				EnvVar: "ELASTICACHE_CONSUL_SERVICE_SUFFIX",
+				Value:  "",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app := elasticache.New(c)
+			app.Run()
+
+			return nil
+		},
+	}
+
 	allCommand := cli.Command{
 		Name:  "all",
 		Usage: "Run all scripts",
 		Action: func(c *cli.Context) error {
 			rdsApp := rds.New(c)
 			kafkaApp := kafka.New(c)
+			elasticacheApp := elasticache.New(c)
 
 			go rdsApp.Run()
 			go kafkaApp.Run()
+			go elasticacheApp.Run()
 
 			// Wait indefinitely
 			select {}
-		},
-		Flags: append(
-			rdsCommand.Flags,      // rds command flags
-			kafkaCommand.Flags..., // kafka command flags
+		}, Flags: append(
+			append(
+				rdsCommand.Flags,      // rds command flags
+				kafkaCommand.Flags..., // kafka command flags
+			),
+			elasticacheCommand.Flags..., // elasticache command flags
 		),
 	}
 
-	app.Commands = []cli.Command{rdsCommand, kafkaCommand, allCommand}
+	app.Commands = []cli.Command{rdsCommand, kafkaCommand, elasticacheCommand, allCommand}
 
 	app.Run(os.Args)
 }

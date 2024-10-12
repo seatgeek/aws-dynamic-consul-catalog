@@ -3,6 +3,7 @@ package config
 import (
 	"sync"
 
+	elasticacheTypes "github.com/aws/aws-sdk-go-v2/service/elasticache/types"
 	kafkaTypes "github.com/aws/aws-sdk-go-v2/service/kafka/types"
 	rdsTypes "github.com/aws/aws-sdk-go-v2/service/rds/types"
 )
@@ -39,7 +40,7 @@ type RDSInstances struct {
 
 // Kafka ...
 type MSKCluster struct {
-	*kafkaTypes.Cluster
+	Cluster *kafkaTypes.Cluster
 	Tags    Tags
 	Brokers []Brokers
 }
@@ -47,6 +48,12 @@ type MSKCluster struct {
 type Brokers struct {
 	Host string
 	Port int
+}
+
+// Elasticache ...
+type Elasticache struct {
+	CacheCluster *elasticacheTypes.CacheCluster
+	Tags         Tags
 }
 
 // Filters ...

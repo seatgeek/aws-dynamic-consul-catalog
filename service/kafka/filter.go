@@ -55,9 +55,9 @@ func (r *KAFKA) filterByInstanceData(instance *config.MSKCluster, filters config
 	for k, filter := range filters {
 		switch k {
 		case "ClusterArn":
-			return r.matches(filter, aws.ToString(instance.ClusterArn))
+			return r.matches(filter, aws.ToString(instance.Cluster.ClusterArn))
 		case "ClusterName":
-			return r.startsWith(filter, aws.ToString(instance.ClusterName))
+			return r.startsWith(filter, aws.ToString(instance.Cluster.ClusterName))
 		default:
 			log.Fatalf("Unknown instance filter key %s (%s)", k, filter)
 		}

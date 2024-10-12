@@ -33,7 +33,7 @@ func (r *ELASTICACHE) writer(prop observer.Property, state *config.CatalogState)
 			logger.Debug("Starting Consul Catalog write")
 
 			stream.Next()
-			instances := stream.Value().([]*config.MSKCluster)
+			instances := stream.Value().([]*config.Elasticache)
 
 			seen := state.Services.GetSeen()
 
@@ -63,38 +63,35 @@ func (r *ELASTICACHE) writer(prop observer.Property, state *config.CatalogState)
 	}
 }
 
-func (r *ELASTICACHE) writeBackendCatalog(instance *config.MSKCluster, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
+func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
 
-	logger = logger.WithField("instance", aws.ToString(instance.ClusterName))
+	logger = logger.WithField("instance", aws.ToString(instance.CacheCluster.CacheClusterId))
 
-	name := aws.ToString(instance.ClusterName)
+	name := aws.ToString(instance.CacheCluster.CacheClusterId)
 
-	if *instance.ClusterName == "creating" {
+	if *instance.CacheCluster.CacheClusterStatus == "creating" {
 		logger.Warnf("Instance %s is being created, skipping for now", name)
 		return
 	}
 
-	if instance.Brokers == nil {
-		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %s", name, *instance.ClusterName)
+	if instance.CacheCluster.CacheNodes == nil {
+		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %s", name, *&instance.CacheCluster.CacheNodes)
 		return
 	}
 
-	for i, broker := range instance.Brokers {
-		addr := broker.Host
-		port := broker.Port
-
-		logger.Debugf("  Addr: %s", addr)
-		logger.Debugf("  Port: %d", port)
+	for i, broker := range instance.CacheCluster.CacheNodes {
+		addr := broker.Endpoint.Address
+		port := broker.Endpoint.Port
 
 		tags := make([]string, 0)
 
 		status := "passing"
-		switch aws.ToString((*string)(&instance.Cluster.State)) {
-		case "ACTIVE", "MAINTENANCE", "UPDATING", "REBOOTING_BROKER":
+		switch aws.ToString(instance.CacheCluster.CacheClusterStatus) {
+		case "modifying", "cluster nodes", "snapshotting":
 			status = "passing"
-		case "CREATING", "DELETING", "FAILED":
+		case "creating", "rebooting", "deleting", "deleted", "restore-failed ":
 			status = "critical"
-		case "HEALING":
+		case "incompatible-network":
 			status = "warning"
 		default:
 			status = "passing"
@@ -104,18 +101,18 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.MSKCluster, logger *l
 		service := &config.Service{
 			ServiceID:      serviceID,
 			ServiceName:    name,
-			ServiceAddress: addr,
-			ServicePort:    port,
+			ServiceAddress: *addr,
+			ServicePort:    int(*port),
 			ServiceTags:    tags,
 			CheckID:        fmt.Sprintf("service:%s", serviceID),
 			CheckNode:      r.consulNodeName,
-			CheckNotes:     fmt.Sprintf("ELASTICACHE Instance Status: %s", aws.ToString(instance.ClusterName)),
+			CheckNotes:     fmt.Sprintf("ELASTICACHE Instance Status: %s", aws.ToString(instance.CacheCluster.CacheClusterId)),
 			CheckStatus:    status,
-			CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\n\nmanaged by aws-dynamic-consul-catalog", aws.ToString(instance.ClusterName)),
+			CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\n\nmanaged by aws-dynamic-consul-catalog", aws.ToString(instance.CacheCluster.CacheClusterId)),
 		}
 
 		service.ServiceMeta = make(map[string]string)
-		service.ServiceMeta["ClusterName"] = aws.ToString(instance.ClusterName)
+		service.ServiceMeta["ClusterName"] = aws.ToString(instance.CacheCluster.CacheClusterId)
 
 		if stringInSlice(service.ServiceID, seen.Services) {
 			logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' ELASTICACHE tag with same Replication Role", service.ServiceID)

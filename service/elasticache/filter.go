@@ -25,9 +25,9 @@ func (r *ELASTICACHE) filter(all, filtered observer.Property) {
 			logger.Debug("Starting filtering ELASTICACHE instances")
 
 			stream.Next()
-			instances := stream.Value().([]*config.MSKCluster)
+			instances := stream.Value().([]*config.Elasticache)
 
-			filteredInstances := make([]*config.MSKCluster, 0)
+			filteredInstances := make([]*config.Elasticache, 0)
 
 			for _, instance := range instances {
 				if !r.filterByInstanceData(instance, r.instanceFilters) {
@@ -47,7 +47,7 @@ func (r *ELASTICACHE) filter(all, filtered observer.Property) {
 	}
 }
 
-func (r *ELASTICACHE) filterByInstanceData(instance *config.MSKCluster, filters config.Filters) bool {
+func (r *ELASTICACHE) filterByInstanceData(instance *config.Elasticache, filters config.Filters) bool {
 	if len(filters) == 0 {
 		return true
 	}
@@ -55,9 +55,9 @@ func (r *ELASTICACHE) filterByInstanceData(instance *config.MSKCluster, filters 
 	for k, filter := range filters {
 		switch k {
 		case "ClusterArn":
-			return r.matches(filter, aws.ToString(instance.ClusterArn))
+			return r.matches(filter, aws.ToString(instance.CacheCluster.ARN))
 		case "ClusterName":
-			return r.startsWith(filter, aws.ToString(instance.ClusterName))
+			return r.startsWith(filter, aws.ToString(instance.CacheCluster.CacheClusterId))
 		default:
 			log.Fatalf("Unknown instance filter key %s (%s)", k, filter)
 		}
@@ -85,7 +85,7 @@ func (r *ELASTICACHE) startsWith(filter, value string) bool {
 	return false
 }
 
-func (r *ELASTICACHE) filterByInstanceTags(instance *config.MSKCluster, filters config.Filters) bool { // @TODO: filter by tags
+func (r *ELASTICACHE) filterByInstanceTags(instance *config.Elasticache, filters config.Filters) bool {
 	if len(filters) == 0 {
 		return true
 	}
