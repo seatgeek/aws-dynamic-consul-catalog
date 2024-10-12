@@ -75,7 +75,7 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *
 	}
 
 	if instance.CacheCluster.CacheNodes == nil {
-		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %v", name, *&instance.CacheCluster.CacheNodes)
+		logger.Errorf("Instance %s does not have an endpoint yet, the instance is in state: %v", name, instance.CacheCluster.CacheNodes)
 		return
 	}
 

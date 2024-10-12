@@ -84,7 +84,14 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 		for _, instance := range resp.CacheClusters {
 			instances = append(instances, &config.Elasticache{
 				CacheCluster: &instance,
-				// Tags:       instance.
+				Tags: func() config.Tags {
+					tags, err := r.getElastiCacheTags(aws.ToString(instance.ARN))
+					if err != nil {
+						logger.Errorf("Failed to get tags for instance %s: %v", aws.ToString(instance.ARN), err)
+						return nil
+					}
+					return tags
+				}(),
 			})
 		}
 
@@ -98,38 +105,21 @@ func (r *ELASTICACHE) read(prop observer.Property, logger *log.Entry) {
 	logger.Debug("Finished refresh of ELASTICACHE information")
 }
 
-// func (r *ELASTICACHE) getBrokers(instance *elasticachetypes.CacheCluster) []config.Brokers {
-// 	clusterArn := aws.ToString(instance.ClusterArn)
+func (r *ELASTICACHE) getElastiCacheTags(resourceArn string) (config.Tags, error) {
+	input := &elasticache.ListTagsForResourceInput{
+		ResourceName: &resourceArn,
+	}
 
-// 	input := &elasticache.GetBootstrapBrokersInput{
-// 		ClusterArn: aws.String(clusterArn),
-// 	}
+	resp, err := r.elasticache.ListTagsForResource(context.TODO(), input)
+	if err != nil {
+		log.Printf("Failed to list tags for resource %s: %v", resourceArn, err)
+		return nil, err
+	}
 
-// 	result, err := r.elasticache.GetBootstrapBrokers(context.TODO(), input)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	tags := make(config.Tags)
+	for _, tag := range resp.TagList {
+		tags[*tag.Key] = *tag.Value
+	}
 
-// 	res := []config.Brokers{}
-
-// 	log.Debugf("Adding brokers for cluster %s", clusterArn)
-// 	if result != nil {
-// 		log.Debugf("BootstrapBrokerStringSaslScram: %s", aws.ToString(result.BootstrapBrokerStringSaslScram))
-// 		brokers := aws.ToString(result.BootstrapBrokerStringSaslScram)
-// 		for _, broker := range strings.Split(brokers, ",") {
-// 			res = append(res, config.Brokers{
-// 				Host: strings.Split(broker, ":")[0],
-// 				Port: func() int {
-// 					port, err := strconv.Atoi(strings.Split(broker, ":")[1])
-// 					if err != nil {
-// 						log.Fatalf("Invalid port number: %v", err)
-// 					}
-// 					return port
-// 				}(),
-// 			})
-// 			log.Infof("Adding broker %s", broker)
-// 		}
-// 	}
-
-// 	return res
-// }
+	return tags, nil
+}

@@ -27,7 +27,7 @@ func main() {
 			Name:   "check-interval",
 			Usage:  "How often to check for RDS changes (eg. 30s, 1h, 1h10m, 1d)",
 			EnvVar: "CHECK_INTERVAL",
-			Value:  60 * time.Second,
+			Value:  300 * time.Second,
 		},
 		cli.StringFlag{
 			Name:   "log-level",
