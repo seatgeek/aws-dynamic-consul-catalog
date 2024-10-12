@@ -91,8 +91,6 @@ func (r *KAFKA) writeBackendCatalog(instance *config.MSKCluster, logger *log.Ent
 		logger.Debugf("  Port: %d", port)
 
 		tags := make([]string, 0)
-		tags = append(tags, r.consulMasterTag)
-		tags = append(tags, r.consulReplicaTag)
 
 		status := "passing"
 		switch aws.ToString(instance.ClusterName) {

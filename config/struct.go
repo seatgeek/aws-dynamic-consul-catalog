@@ -31,10 +31,25 @@ type SeenCatalog struct {
 // Tags ...
 type Tags map[string]string
 
-// DBInstance ...
-type DBInstance struct {
-	*rdsTypes.DBInstance
-	Tags Tags
+// RDS ...
+type RDSInstances struct {
+	RDSInstance *rdsTypes.DBInstance
+	Tags        Tags
+}
+type RDSClusters struct {
+	RDSCluster *rdsTypes.DBCluster
+	Tags       Tags
+}
+type RDSGlobalCluster struct {
+	RDSGlobalCluster *rdsTypes.GlobalCluster
+	Tags             Tags
+}
+
+type RDSResources struct {
+	DBInstances    []rdsTypes.DBInstance
+	DBClusters     []rdsTypes.DBCluster
+	GlobalClusters []rdsTypes.GlobalCluster
+	Tags           Tags
 }
 
 // Kafka ...

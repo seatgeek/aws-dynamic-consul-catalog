@@ -1,22 +1,23 @@
 package rds
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/rds"
+	aws "github.com/aws/aws-sdk-go-v2/aws"
+	rds "github.com/aws/aws-sdk-go-v2/service/rds"
+	rdstypes "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	observer "github.com/imkira/go-observer"
-	cache "github.com/patrickmn/go-cache"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
 func (r *RDS) reader(prop observer.Property) {
-	logger := log.WithField("worker", "indexer")
-	logger.Info("Starting RDS index worker")
+	logger := log.WithField("rds", "reader")
+	logger.Info("Starting RDS reader")
 
 	ticker := time.NewTimer(r.checkInterval)
 
@@ -48,74 +49,182 @@ func (r *RDS) reader(prop observer.Property) {
 func (r *RDS) read(prop observer.Property, logger *log.Entry) {
 	logger.Debug("Starting refresh of RDS information")
 
-	var marker *string
-	pages := 0
-	instances := make([]*config.DBInstance, 0)
-	errorCount := 0
+	// resources := make([]*config.RDSResources, 0)
+	instances := make([]*config.RDSInstances, 0)
+	clusters := make([]*config.RDSClusters, 0)
+	globalclusters := make([]*config.RDSGlobalCluster, 0)
 
-	for {
-		pages = pages + 1
-		if marker != nil {
-			logger.Debugf("Reading RDS information page %d (from marker: %s)", pages, *marker)
-		} else {
-			logger.Debug("Reading RDS information page 1")
-		}
+	res, err := r.fetchRDSResources()
+	if err != nil {
+		log.Fatalf("Failed to fetch RDS resources: %v", err)
+	}
+	// instances = append(instances, res.DBInstances)
 
-		resp, err := r.rds.DescribeDBInstances(&rds.DescribeDBInstancesInput{
-			Marker:     marker,
-			MaxRecords: aws.Int64(100),
+	for _, instance := range res.DBInstances {
+		logger.Debugf("Found RDS instance: %s", aws.ToString(instance.DBInstanceArn))
+		instances = append(instances, &config.RDSInstances{
+			RDSInstance: &instance,
+			Tags:        convertTags(instance.TagList),
 		})
-		if err != nil {
-			logger.Debugf("Using AWS ARN %s", os.Getenv("AWS_ROLE_ARN"))
-			logger.Errorf("Could not read RDS instances: %+v", err)
-			time.Sleep(5 * time.Second)
-			errorCount = errorCount + 1
-
-			if errorCount >= 10 {
-				log.Fatal("Could not get RDS instances after 10 retries")
-			}
-
-			continue
-		}
-		errorCount = 0
-
-		marker = resp.Marker
-		for _, instance := range resp.DBInstances {
-			instances = append(instances, &config.DBInstance{instance, r.getInstanceTags(instance)})
-		}
-
-		if marker == nil {
-			logger.Debugf("Finished reading RDS information page (saw %d pages)", pages)
-			break
-		}
+	}
+	for _, cluster := range res.DBClusters {
+		logger.Debugf("Found RDS Cluster: %s", aws.ToString(cluster.DBClusterArn))
+		clusters = append(clusters, &config.RDSClusters{
+			RDSCluster: &cluster,
+			Tags:       convertTags(cluster.TagList),
+		})
+	}
+	for _, globalcluster := range res.GlobalClusters {
+		logger.Debugf("Found RDS GlobalClusters: %s", aws.ToString(globalcluster.GlobalClusterArn))
+		globalclusters = append(globalclusters, &config.RDSGlobalCluster{
+			RDSGlobalCluster: &globalcluster,
+			Tags:             convertTags(globalcluster.TagList),
+		})
 	}
 
 	prop.Update(instances)
+	prop.Update(clusters)
+	prop.Update(globalclusters)
 	logger.Debug("Finished refresh of RDS information")
 }
 
-func (r *RDS) getInstanceTags(instance *rds.DBInstance) config.Tags {
-	instanceArn := aws.StringValue(instance.DBInstanceArn)
+func (r *RDS) fetchRDSResources() (*config.RDSResources, error) {
+	logger := log.WithField("rds", "fetchRDSResources")
+	logger.Info("Starting RDS fetchRDSResources")
+	resources := &config.RDSResources{}
+	var marker *string
+	pages := 0
+	errorCount := 0
 
-	cachedTags, found := r.tagCache.Get(instanceArn)
-	if found {
-		log.Debugf("Found tags in cache for %s", instanceArn)
-		return *cachedTags.(*config.Tags)
+	// for {
+	pages = 0
+	errorCount = 0
+	marker = nil
+	for {
+		pages = pages + 1
+		if marker != nil {
+			logger.Debugf("Reading RDS instances information page %d (from marker: %s)", pages, *marker)
+		} else {
+			logger.Debugf("Reading RDS instances information page %d", pages)
+		}
+
+		dbInstancesOutput, err := r.rds.DescribeDBInstances(context.TODO(), &rds.DescribeDBInstancesInput{
+			Marker:     marker,
+			MaxRecords: aws.Int32(100),
+		})
+		if err != nil {
+			log.Errorf("Failed to describe DB instances: %v", err)
+			time.Sleep(5 * time.Second)
+			errorCount = errorCount + 1
+		}
+		if errorCount >= 10 {
+			log.Fatal("Could not get RDS instances after 10 retries")
+		}
+		resources.DBInstances = append(resources.DBInstances, dbInstancesOutput.DBInstances...)
+		marker = dbInstancesOutput.Marker
+		if marker == nil {
+			break
+		}
 	}
+	pages = 0
+	errorCount = 0
+	marker = nil
+	for {
+		pages = pages + 1
+		if marker != nil {
+			logger.Debugf("Reading RDS clusters information page %d (from marker: %s)", pages, *marker)
+		} else {
+			logger.Debugf("Reading RDS clusters information page %d", pages)
+		}
 
-	input := &rds.ListTagsForResourceInput{ResourceName: instance.DBInstanceArn}
-	x, err := r.rds.ListTagsForResource(input)
-	if err != nil {
-		log.Fatal(err)
+		dbClustersOutput, err := r.rds.DescribeDBClusters(context.TODO(), &rds.DescribeDBClustersInput{
+			Marker:     marker,
+			MaxRecords: aws.Int32(100),
+		})
+		if err != nil {
+			log.Errorf("Failed to describe DB clusters: %v", err)
+			time.Sleep(5 * time.Second)
+			errorCount = errorCount + 1
+		}
+		if errorCount >= 10 {
+			log.Fatal("Could not get RDS clusters after 10 retries")
+		}
+		resources.DBClusters = append(resources.DBClusters, dbClustersOutput.DBClusters...)
+		marker = dbClustersOutput.Marker
+		if marker == nil {
+			break
+		}
 	}
+	pages = 0
+	errorCount = 0
+	marker = nil
+	for {
+		pages = pages + 1
+		if marker != nil {
+			logger.Debugf("Reading RDS global clusters information page %d (from marker: %s)", pages, *marker)
+		} else {
+			logger.Debugf("Reading RDS global clusters information page %d", pages)
+		}
 
-	res := make(config.Tags)
-
-	for _, tag := range x.TagList {
-		res[*tag.Key] = *tag.Value
+		globalClustersOutput, err := r.rds.DescribeGlobalClusters(context.TODO(), &rds.DescribeGlobalClustersInput{
+			Marker:     marker,
+			MaxRecords: aws.Int32(100),
+		})
+		if err != nil {
+			log.Errorf("Failed to describe global clusters: %v", err)
+			time.Sleep(5 * time.Second)
+			errorCount = errorCount + 1
+		}
+		if errorCount >= 10 {
+			log.Fatal("Could not get RDS instances after 10 retries")
+		}
+		resources.GlobalClusters = append(resources.GlobalClusters, globalClustersOutput.GlobalClusters...)
+		marker = globalClustersOutput.Marker
+		if marker == nil {
+			break
+		}
 	}
-
-	r.tagCache.Set(instanceArn, &res, cache.DefaultExpiration)
-
-	return res
+	return resources, nil
 }
+
+func convertTags(tagList []rdstypes.Tag) config.Tags {
+	tags := make(config.Tags)
+	for _, tag := range tagList {
+		tags[*tag.Key] = *tag.Value
+	}
+	return tags
+}
+
+// func (r *RDS) getInstanceTags(instance *rdstypes.DBInstance) config.Tags {
+// 	logger := log.WithField("rds", "getInstanceTags")
+// 	logger.Info("Starting RDS getInstanceTags")
+
+// 	instanceArn := aws.ToString(instance.DBInstanceArn)
+
+// 	logger.Debugf("Getting tags for %s", instanceArn)
+
+// 	cachedTags, found := r.tagCache.Get(instanceArn)
+// 	if found {
+// 		log.Debugf("Found tags in cache for %s", instanceArn)
+// 		return *cachedTags.(*config.Tags)
+// 	}
+
+// 	input := &rds.ListTagsForResourceInput{
+// 		ResourceName: instance.DBInstanceArn,
+// 	}
+
+// 	x, err := r.rds.ListTagsForResource(context.TODO(), input)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	res := make(config.Tags)
+
+// 	for _, tag := range x.TagList {
+// 		res[*tag.Key] = *tag.Value
+// 	}
+
+// 	r.tagCache.Set(instanceArn, &res, cache.DefaultExpiration)
+
+// 	return res
+// }

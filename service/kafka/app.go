@@ -18,19 +18,19 @@ import (
 
 // KAFKA ...
 type KAFKA struct {
-	kafka            *kafka.Client
-	backend          config.Backend
-	instanceFilters  config.Filters
-	tagFilters       config.Filters
-	tagCache         *cache.Cache
-	checkInterval    time.Duration
-	quitCh           chan int
-	onDuplicate      string
-	servicePrefix    string
-	serviceSuffix    string
-	consulNodeName   string
-	consulMasterTag  string
-	consulReplicaTag string
+	kafka           *kafka.Client
+	backend         config.Backend
+	instanceFilters config.Filters
+	tagFilters      config.Filters
+	tagCache        *cache.Cache
+	checkInterval   time.Duration
+	quitCh          chan int
+	onDuplicate     string
+	servicePrefix   string
+	serviceSuffix   string
+	consulNodeName  string
+	// consulMasterTag  string
+	// consulReplicaTag string
 }
 
 // New ...

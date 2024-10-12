@@ -7,16 +7,16 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
+	aws "github.com/aws/aws-sdk-go-v2/aws"
 	observer "github.com/imkira/go-observer"
-	"github.com/seatgeek/aws-dynamic-consul-catalog/config"
+	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
 )
 
 var removeUpdatedTimeRegexp = regexp.MustCompile("\n\nLast update: .+")
 
 func (r *RDS) writer(prop observer.Property, state *config.CatalogState) {
-	logger := log.WithField("worker", "writer")
+	logger := log.WithField("rds", "writer")
 	logger.Info("Starting RDS Consul Catalog writer")
 
 	stream := prop.Observe()
@@ -33,7 +33,9 @@ func (r *RDS) writer(prop observer.Property, state *config.CatalogState) {
 			logger.Debug("Starting Consul Catalog write")
 
 			stream.Next()
-			instances := stream.Value().([]*config.DBInstance)
+			instances := stream.Value().([]*config.RDSInstances)
+			// clusters := stream.Value().([]*config.RDSClusters)
+			// globalclusters := stream.Value().([]*config.RDSGlobalCluster)
 
 			seen := state.Services.GetSeen()
 
@@ -63,8 +65,8 @@ func (r *RDS) writer(prop observer.Property, state *config.CatalogState) {
 	}
 }
 
-func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
-	logger = logger.WithField("instance", aws.StringValue(instance.DBInstanceIdentifier))
+func (r *RDS) writeBackendCatalog(instance *config.RDSInstances, logger *log.Entry, state *config.CatalogState, seen *config.SeenCatalog) {
+	logger.Info("Starting RDS Consul writeBackendCatalog")
 
 	name := r.getServiceName(instance)
 	if name == "" {
@@ -72,21 +74,21 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	}
 	id := name
 
-	if *instance.DBInstanceStatus == "creating" {
+	if *instance.RDSInstance.DBInstanceStatus == "creating" {
 		logger.Warnf("Instance %s id being created, skipping for now", name)
 		return
 	}
 
-	if instance.Endpoint == nil {
-		logger.Errorf("Instance %s do not have an endpoint yet, the instance is in state: %s", name, *instance.DBInstanceStatus)
+	if instance.RDSInstance.Endpoint == nil {
+		logger.Errorf("Instance %s do not have an endpoint yet, the instance is in state: %s", name, *instance.RDSInstance.DBInstanceStatus)
 		return
 	}
 
-	addr := aws.StringValue(instance.Endpoint.Address)
-	port := aws.Int64Value(instance.Endpoint.Port)
+	addr := aws.ToString(instance.RDSInstance.Endpoint.Address)
+	port := aws.ToInt64(aws.Int64(int64(*instance.RDSInstance.Endpoint.Port)))
 
-	isSlave := instance.ReadReplicaSourceDBInstanceIdentifier != nil
-	isMaster := len(instance.ReadReplicaDBInstanceIdentifiers) > 0
+	isSlave := instance.RDSInstance.ReadReplicaSourceDBInstanceIdentifier != nil
+	isMaster := len(instance.RDSInstance.ReadReplicaDBInstanceIdentifiers) > 0
 
 	logger.Debugf("  ID:   %s", id)
 	logger.Debugf("  Name: %s", name)
@@ -96,7 +98,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	tags := make([]string, 0)
 	if isSlave {
 		tags = append(tags, r.consulReplicaTag)
-		id = fmt.Sprintf("%s-%s-%s", id, *instance.DBInstanceIdentifier, r.consulReplicaTag)
+		id = fmt.Sprintf("%s-%s-%s", id, *instance.RDSInstance.DBInstanceIdentifier, r.consulReplicaTag)
 	}
 
 	if isMaster {
@@ -110,7 +112,7 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	}
 
 	status := "passing"
-	switch aws.StringValue(instance.DBInstanceStatus) {
+	switch aws.ToString(instance.RDSInstance.DBInstanceStatus) {
 	case "backing-up":
 		status = "passing"
 	case "available":
@@ -163,17 +165,18 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 		ServiceTags:    tags,
 		CheckID:        fmt.Sprintf("service:%s", id),
 		CheckNode:      r.consulNodeName,
-		CheckNotes:     fmt.Sprintf("RDS Instance Status: %s", aws.StringValue(instance.DBInstanceStatus)),
+		CheckNotes:     fmt.Sprintf("RDS Instance Status: %s", aws.ToString(instance.RDSInstance.DBInstanceStatus)),
 		CheckStatus:    status,
-		CheckOutput:    fmt.Sprintf("Pending tasks: %s\n\nAddr: %s\n\nmanaged by aws-dynamic-consul-catalog", instance.PendingModifiedValues.GoString(), addr),
+		CheckOutput:    fmt.Sprintf("Pending tasks: %+v\n\nAddr: %s\n\nmanaged by aws-dynamic-consul-catalog", instance.RDSInstance.PendingModifiedValues, addr),
 	}
 
 	service.ServiceMeta = make(map[string]string)
-	service.ServiceMeta["Engine"] = aws.StringValue(instance.Engine)
-	service.ServiceMeta["EngineVersion"] = aws.StringValue(instance.EngineVersion)
-	service.ServiceMeta["DBName"] = aws.StringValue(instance.DBName)
-	service.ServiceMeta["DBInstanceClass"] = aws.StringValue(instance.DBInstanceClass)
-	service.ServiceMeta["DBInstanceIdentifier"] = aws.StringValue(instance.DBInstanceIdentifier)
+	service.ServiceMeta["Engine"] = aws.ToString(instance.RDSInstance.Engine)
+	service.ServiceMeta["EngineVersion"] = aws.ToString(instance.RDSInstance.EngineVersion)
+	service.ServiceMeta["DBName"] = aws.ToString(instance.RDSInstance.DBName)
+	service.ServiceMeta["DBInstanceClass"] = aws.ToString(instance.RDSInstance.DBInstanceClass)
+	service.ServiceMeta["DBInstanceIdentifier"] = aws.ToString(instance.RDSInstance.DBInstanceIdentifier)
+	service.ServiceMeta["DBClusterIdentifier"] = aws.ToString(instance.RDSInstance.DBClusterIdentifier)
 
 	if stringInSlice(service.ServiceID, seen.Services) {
 		logger.Errorf("Found duplicate Service ID %s - possible duplicate 'consul_service_name' RDS tag with same Replication Role", service.ServiceID)
@@ -217,19 +220,21 @@ func (r *RDS) writeBackendCatalog(instance *config.DBInstance, logger *log.Entry
 	r.backend.WriteService(service)
 }
 
-func (r *RDS) getServiceName(instance *config.DBInstance) string {
+func (r *RDS) getServiceName(instance *config.RDSInstances) string {
+	logger := log.WithField("rds", "getServiceName")
+	logger.Info("Starting RDS Consul getServiceName")
 	// prefer the consul_service_name from instance tags
 	if name, ok := instance.Tags["consul_service_name"]; ok {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
 
 	// derive from the instance DB name
-	name := aws.StringValue(instance.DBName)
+	var name string
 	if name != "" {
 		return r.servicePrefix + name + r.serviceSuffix
 	}
 
-	log.Errorf("Failed to find service name for " + aws.StringValue(instance.DBInstanceArn))
+	log.Errorf("Failed to find service name for " + aws.ToString(instance.RDSInstance.DBInstanceArn))
 	return ""
 }
 

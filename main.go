@@ -12,8 +12,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "consul-aws-catalog"
-	app.Usage = "Easily maintain AWS RDS information in Consul service catalog"
-	app.Version = "0.1"
+	app.Usage = "Easily maintain AWS Services information in Consul service catalog"
+	app.Version = "0.2"
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
