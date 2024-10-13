@@ -41,7 +41,7 @@ func (b *Backend) CatalogReader(state *config.CatalogState, consulNodeName strin
 
 			meta, err := raw.Query("/v1/internal/ui/node/"+consulNodeName, &newNode, q)
 			if err != nil {
-				time.Sleep(10 * time.Second)
+				time.Sleep(30 * time.Second)
 				continue
 			}
 

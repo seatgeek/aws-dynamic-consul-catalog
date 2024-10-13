@@ -52,8 +52,9 @@ type Brokers struct {
 
 // Elasticache ...
 type Elasticache struct {
-	CacheCluster *elasticacheTypes.CacheCluster
-	Tags         Tags
+	CacheCluster     *elasticacheTypes.CacheCluster
+	ReplicationGroup []*elasticacheTypes.ReplicationGroup
+	Tags             Tags
 }
 
 // Filters ...

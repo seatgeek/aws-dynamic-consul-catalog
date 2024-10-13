@@ -1,6 +1,7 @@
 package elasticache
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -8,6 +9,8 @@ import (
 	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
+	elasticache "github.com/aws/aws-sdk-go-v2/service/elasticache"
+	elasticachetypes "github.com/aws/aws-sdk-go-v2/service/elasticache/types"
 	observer "github.com/imkira/go-observer"
 	config "github.com/seatgeek/aws-dynamic-consul-catalog/config"
 	log "github.com/sirupsen/logrus"
@@ -43,6 +46,14 @@ func (r *ELASTICACHE) writer(prop observer.Property, state *config.CatalogState)
 			}
 
 			for _, instance := range instances {
+				instance.ReplicationGroup = func() []*elasticachetypes.ReplicationGroup {
+					nodeRole, err := r.getNodeRole(aws.ToString(instance.CacheCluster.ReplicationGroupId))
+					if err != nil {
+						logger.Errorf("Failed to get node role for instance %s: %v", aws.ToString(instance.CacheCluster.ReplicationGroupId), err)
+						return nil
+					}
+					return nodeRole
+				}()
 				r.writeBackendCatalog(instance, logger, state, found)
 			}
 
@@ -79,11 +90,32 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *
 		return
 	}
 
-	for i, broker := range instance.CacheCluster.CacheNodes {
-		addr := broker.Endpoint.Address
-		port := broker.Endpoint.Port
+	for i, node := range instance.CacheCluster.CacheNodes {
+		addr := node.Endpoint.Address
+		port := node.Endpoint.Port
+
+		iscluster := instance.ReplicationGroup[0].ClusterEnabled
+		isPrimary := aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[int(name[len(name)-1]-'0')-1].CurrentRole) == "primary" && !*iscluster
+		isReplica := aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[int(name[len(name)-1]-'0')-1].CurrentRole) == "replica" && !*iscluster
+
+		serviceID := fmt.Sprintf("%s-%d", name, i)
+		name = instance.Tags["stack"] + "-" + instance.Tags["environment"] + "-" + instance.Tags["name"]
 
 		tags := make([]string, 0)
+		if isReplica {
+			tags = append(tags, r.consulReplicaTag)
+			serviceID = serviceID + "-" + r.consulReplicaTag
+		}
+
+		if isPrimary {
+			tags = append(tags, r.consulPrimaryTag)
+			serviceID = serviceID + "-" + r.consulPrimaryTag
+		}
+
+		if *iscluster {
+			tags = append(tags, r.consulClusterTag)
+			serviceID = serviceID + "-" + r.consulClusterTag
+		}
 
 		status := "passing"
 		switch aws.ToString(instance.CacheCluster.CacheClusterStatus) {
@@ -97,7 +129,6 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *
 			status = "passing"
 		}
 
-		serviceID := fmt.Sprintf("%s-%d", name, i)
 		service := &config.Service{
 			ServiceID:      serviceID,
 			ServiceName:    name,
@@ -242,4 +273,26 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func (r *ELASTICACHE) getNodeRole(replicationGroupId string) ([]*elasticachetypes.ReplicationGroup, error) {
+	log.Debugf("Getting node role for replication group %s", replicationGroupId)
+	input := &elasticache.DescribeReplicationGroupsInput{
+		ReplicationGroupId: &replicationGroupId,
+	}
+
+	resp, err := r.elasticache.DescribeReplicationGroups(context.TODO(), input)
+	if err != nil {
+		log.Printf("Failed to list tags for resource %s: %v", replicationGroupId, err)
+		return nil, err
+	}
+
+	if len(resp.ReplicationGroups) > 0 {
+		replicationGroups := make([]*elasticachetypes.ReplicationGroup, len(resp.ReplicationGroups))
+		for i := range resp.ReplicationGroups {
+			replicationGroups[i] = &resp.ReplicationGroups[i]
+		}
+		return replicationGroups, nil
+	}
+	return nil, nil
 }

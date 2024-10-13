@@ -18,17 +18,20 @@ import (
 
 // ELASTICACHE ...
 type ELASTICACHE struct {
-	elasticache     *elasticache.Client
-	backend         config.Backend
-	instanceFilters config.Filters
-	tagFilters      config.Filters
-	tagCache        *cache.Cache
-	checkInterval   time.Duration
-	quitCh          chan int
-	onDuplicate     string
-	servicePrefix   string
-	serviceSuffix   string
-	consulNodeName  string
+	elasticache      *elasticache.Client
+	backend          config.Backend
+	instanceFilters  config.Filters
+	tagFilters       config.Filters
+	tagCache         *cache.Cache
+	checkInterval    time.Duration
+	quitCh           chan int
+	onDuplicate      string
+	servicePrefix    string
+	serviceSuffix    string
+	consulNodeName   string
+	consulPrimaryTag string
+	consulReplicaTag string
+	consulClusterTag string
 }
 
 // New ...
@@ -54,17 +57,20 @@ func New(c *cli.Context) *ELASTICACHE {
 	}
 
 	return &ELASTICACHE{
-		elasticache:     elasticache.NewFromConfig(cfg),
-		backend:         cc.NewBackend(),
-		instanceFilters: config.ProcessFilters(c.StringSlice("elasticache_instance-filter")),
-		tagFilters:      config.ProcessFilters(c.StringSlice("elasticache_tag-filter")),
-		tagCache:        cache.New(c.Duration("elasticache-tag-cache-time"), 10*time.Minute),
-		checkInterval:   c.GlobalDuration("check-interval"),
-		quitCh:          make(chan int),
-		onDuplicate:     c.GlobalString("on-duplicate"),
-		servicePrefix:   c.String("elasticache_consul-service-prefix"),
-		serviceSuffix:   c.String("elasticache_consul-service-suffix"),
-		consulNodeName:  c.String("elasticache_consul-node-name"),
+		elasticache:      elasticache.NewFromConfig(cfg),
+		backend:          cc.NewBackend(),
+		instanceFilters:  config.ProcessFilters(c.StringSlice("elasticache_instance-filter")),
+		tagFilters:       config.ProcessFilters(c.StringSlice("elasticache_tag-filter")),
+		tagCache:         cache.New(c.Duration("elasticache-tag-cache-time"), 10*time.Minute),
+		checkInterval:    c.GlobalDuration("check-interval"),
+		quitCh:           make(chan int),
+		onDuplicate:      c.GlobalString("on-duplicate"),
+		servicePrefix:    c.String("elasticache_consul-service-prefix"),
+		serviceSuffix:    c.String("elasticache_consul-service-suffix"),
+		consulNodeName:   c.String("elasticache_consul-node-name"),
+		consulPrimaryTag: c.String("elasticache_consul-primary-tag"),
+		consulReplicaTag: c.String("elasticache_consul-replica-tag"),
+		consulClusterTag: c.String("elasticache_consul-cluster-tag"),
 	}
 }
 

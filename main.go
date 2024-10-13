@@ -49,19 +49,19 @@ func main() {
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:   "rds_consul-master-tag",
-				Usage:  "The Consul service tag for master instances",
+				Usage:  "The Consul RDS service tag for master instances",
 				Value:  "master",
 				EnvVar: "RDS_CONSUL_MASTER_TAG",
 			},
 			cli.StringFlag{
 				Name:   "rds_consul-replica-tag",
-				Usage:  "The Consul service tag for replica instances",
+				Usage:  "The Consul RDS service tag for replica instances",
 				Value:  "replica",
 				EnvVar: "RDS_CONSUL_REPLICA_TAG",
 			},
 			cli.StringFlag{
 				Name:   "rds_consul-node-name",
-				Usage:  "Consul catalog node name",
+				Usage:  "Consul RDS catalog node name",
 				Value:  "rds",
 				EnvVar: "RDS_CONSUL_NODE_NAME",
 			},
@@ -73,23 +73,23 @@ func main() {
 			},
 			cli.StringSliceFlag{
 				Name:   "rds_instance-filter",
-				Usage:  "AWS filters",
+				Usage:  "AWS RDS filters",
 				EnvVar: "RDS_INSTANCE_FILTER",
 			},
 			cli.StringSliceFlag{
 				Name:   "rds_tag-filter",
-				Usage:  "AWS tag filters",
+				Usage:  "AWS RDS tag filters",
 				EnvVar: "RDS_TAG_FILTER",
 			},
 			cli.StringFlag{
 				Name:   "rds_consul-service-prefix",
-				Usage:  "Consul catalog service prefix",
+				Usage:  "Consul RDS catalog service prefix",
 				EnvVar: "RDS_CONSUL_SERVICE_PREFIX",
 				Value:  "",
 			},
 			cli.StringFlag{
 				Name:   "rds_consul-service-suffix",
-				Usage:  "Consul catalog service suffix",
+				Usage:  "Consul RDS catalog service suffix",
 				EnvVar: "RDS_CONSUL_SERVICE_SUFFIX",
 				Value:  "",
 			},
@@ -108,7 +108,7 @@ func main() {
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:   "kafka_consul-node-name",
-				Usage:  "Consul catalog node name",
+				Usage:  "Consul KAFKA catalog node name",
 				Value:  "kafka",
 				EnvVar: "KAFKA_CONSUL_NODE_NAME",
 			},
@@ -120,23 +120,23 @@ func main() {
 			},
 			cli.StringSliceFlag{
 				Name:   "kafka_instance-filter",
-				Usage:  "AWS filters",
+				Usage:  "AWS KAFKA filters",
 				EnvVar: "KAFKA_INSTANCE_FILTER",
 			},
 			cli.StringSliceFlag{
 				Name:   "kafka_tag-filter",
-				Usage:  "AWS tag filters",
+				Usage:  "AWS KAFKA tag filters",
 				EnvVar: "KAFKA_TAG_FILTER",
 			},
 			cli.StringFlag{
 				Name:   "kafka_consul-service-prefix",
-				Usage:  "Consul catalog service prefix",
+				Usage:  "Consul KAFKA catalog service prefix",
 				EnvVar: "KAFKA_CONSUL_SERVICE_PREFIX",
 				Value:  "",
 			},
 			cli.StringFlag{
 				Name:   "kafka_consul-service-suffix",
-				Usage:  "Consul catalog service suffix",
+				Usage:  "Consul KAFKA catalog service suffix",
 				EnvVar: "KAFKA_CONSUL_SERVICE_SUFFIX",
 				Value:  "",
 			},
@@ -155,37 +155,55 @@ func main() {
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:   "elasticache_consul-node-name",
-				Usage:  "Consul catalog node name",
+				Usage:  "Consul ELASTICACHE catalog node name",
 				Value:  "elasticache",
 				EnvVar: "ELASTICACHE_CONSUL_NODE_NAME",
 			},
 			cli.DurationFlag{
 				Name:   "elasticache-tag-cache-time",
-				Usage:  "The time KAFKA tags should be cached (eg. 30s, 1h, 1h10m, 1d)",
+				Usage:  "The time ELASTICACHE tags should be cached (eg. 30s, 1h, 1h10m, 1d)",
 				EnvVar: "ELASTICACHE_TAG_CACHE_TIME",
 				Value:  30 * time.Minute,
 			},
 			cli.StringSliceFlag{
 				Name:   "elasticache_instance-filter",
-				Usage:  "AWS filters",
+				Usage:  "AWS ELASTICACHE filters",
 				EnvVar: "ELASTICACHE_INSTANCE_FILTER",
 			},
 			cli.StringSliceFlag{
 				Name:   "elasticache_tag-filter",
-				Usage:  "AWS tag filters",
+				Usage:  "AWS ELASTICACHE tag filters",
 				EnvVar: "ELASTICACHE_TAG_FILTER",
 			},
 			cli.StringFlag{
 				Name:   "elasticache_consul-service-prefix",
-				Usage:  "Consul catalog service prefix",
+				Usage:  "Consul ELASTICACHE catalog service prefix",
 				EnvVar: "ELASTICACHE_CONSUL_SERVICE_PREFIX",
 				Value:  "",
 			},
 			cli.StringFlag{
 				Name:   "elasticache_consul-service-suffix",
-				Usage:  "Consul catalog service suffix",
+				Usage:  "Consul ELASTICACHE catalog service suffix",
 				EnvVar: "ELASTICACHE_CONSUL_SERVICE_SUFFIX",
 				Value:  "",
+			},
+			cli.StringFlag{
+				Name:   "elasticache_consul-primary-tag",
+				Usage:  "The Consul ELASTICACHE service tag for master instances",
+				Value:  "primary",
+				EnvVar: "ELASTICACHE_CONSUL_MASTER_TAG",
+			},
+			cli.StringFlag{
+				Name:   "elasticache_consul-replica-tag",
+				Usage:  "The Consul ELASTICACHE service tag for replica instances",
+				Value:  "replica",
+				EnvVar: "ELASTICACHE_CONSUL_REPLICA_TAG",
+			},
+			cli.StringFlag{
+				Name:   "elasticache_consul-cluster-tag",
+				Usage:  "The Consul ELASTICACHE service tag for cluster instances",
+				Value:  "cluster",
+				EnvVar: "ELASTICACHE_CONSUL_REPLICA_TAG",
 			},
 		},
 		Action: func(c *cli.Context) error {
