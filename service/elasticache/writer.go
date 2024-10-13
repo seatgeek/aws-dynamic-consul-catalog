@@ -93,10 +93,19 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *
 	for i, node := range instance.CacheCluster.CacheNodes {
 		addr := node.Endpoint.Address
 		port := node.Endpoint.Port
+		nodeId := aws.ToString(instance.CacheCluster.CacheClusterId)
+		isPrimary := false
+		isReplica := false
+		iscluster := false
+		index := int(nodeId[len(nodeId)-1]-'0') - 1
 
-		iscluster := instance.ReplicationGroup[0].ClusterEnabled
-		isPrimary := aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[int(name[len(name)-1]-'0')-1].CurrentRole) == "primary" && !*iscluster
-		isReplica := aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[int(name[len(name)-1]-'0')-1].CurrentRole) == "replica" && !*iscluster
+		logger.Debugf("Node ID: %s and index is %d", nodeId, index)
+
+		iscluster = *instance.ReplicationGroup[0].ClusterEnabled
+		if !iscluster {
+			isPrimary = aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[index].CurrentRole) == "primary"
+			isReplica = aws.ToString(instance.ReplicationGroup[0].NodeGroups[0].NodeGroupMembers[index].CurrentRole) == "replica"
+		}
 
 		serviceID := fmt.Sprintf("%s-%d", name, i)
 		name = instance.Tags["stack"] + "-" + instance.Tags["environment"] + "-" + instance.Tags["name"]
@@ -112,7 +121,7 @@ func (r *ELASTICACHE) writeBackendCatalog(instance *config.Elasticache, logger *
 			serviceID = serviceID + "-" + r.consulPrimaryTag
 		}
 
-		if *iscluster {
+		if iscluster {
 			tags = append(tags, r.consulClusterTag)
 			serviceID = serviceID + "-" + r.consulClusterTag
 		}

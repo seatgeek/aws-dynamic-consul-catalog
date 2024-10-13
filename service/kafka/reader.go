@@ -130,7 +130,7 @@ func (r *KAFKA) getBrokers(instance *kafkatypes.Cluster) []config.Brokers {
 					return port
 				}(),
 			})
-			log.Infof("Adding broker %s", broker)
+			log.Debugf("Adding broker %s", broker)
 		}
 	}
 

@@ -32,8 +32,9 @@ func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger
 	addr := aws.ToString(instance.RDSInstance.Endpoint.Address)
 	port := aws.ToInt64(aws.Int64(int64(*instance.RDSInstance.Endpoint.Port)))
 
-	isMaster := instance.RDSInstance.ReadReplicaDBInstanceIdentifiers != nil
-	isSlave := len(instance.RDSInstance.ReadReplicaDBInstanceIdentifiers) > 0
+	isSlave := instance.RDSInstance.ReadReplicaSourceDBInstanceIdentifier != nil
+	// isMaster := len(instance.RDSInstance.ReadReplicaDBInstanceIdentifiers) >= 0
+	isMaster := !isSlave
 
 	logger.Debugf("  ID:   %s", id)
 	logger.Debugf("  Name: %s", name)
@@ -41,20 +42,19 @@ func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger
 	logger.Debugf("  Port: %d", port)
 
 	tags := make([]string, 0)
-	if isSlave {
-		tags = append(tags, r.consulReplicaTag)
-		id = fmt.Sprintf("%s-%s-%s", id, *instance.RDSInstance.DBInstanceIdentifier, r.consulReplicaTag)
-	}
-
 	if isMaster {
 		tags = append(tags, r.consulMasterTag)
 		id = id + "-" + r.consulMasterTag
 	}
-
-	if !isSlave && !isMaster {
-		tags = append(tags, r.consulMasterTag)
+	if isSlave {
 		tags = append(tags, r.consulReplicaTag)
+		id = id + "-" + r.consulReplicaTag
 	}
+
+	// if !isSlave && !isMaster {
+	// 	tags = append(tags, r.consulMasterTag)
+	// 	tags = append(tags, r.consulReplicaTag)
+	// }
 
 	status := "passing"
 	switch aws.ToString(instance.RDSInstance.DBInstanceStatus) {
