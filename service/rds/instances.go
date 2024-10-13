@@ -32,8 +32,8 @@ func (r *RDS) writeBackendCatalogInstances(instance *config.RDSInstances, logger
 	addr := aws.ToString(instance.RDSInstance.Endpoint.Address)
 	port := aws.ToInt64(aws.Int64(int64(*instance.RDSInstance.Endpoint.Port)))
 
-	isSlave := instance.RDSInstance.ReadReplicaSourceDBInstanceIdentifier != nil
-	isMaster := len(instance.RDSInstance.ReadReplicaDBInstanceIdentifiers) > 0
+	isMaster := instance.RDSInstance.ReadReplicaDBInstanceIdentifiers != nil
+	isSlave := len(instance.RDSInstance.ReadReplicaDBInstanceIdentifiers) > 0
 
 	logger.Debugf("  ID:   %s", id)
 	logger.Debugf("  Name: %s", name)
