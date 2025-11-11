@@ -46,31 +46,38 @@ func (r *RDS) filter(all, filtered observer.Property) {
 	}
 }
 
+// Returns true if the instance matches all filters provided. If no filters are provided, returns true.
 func (r *RDS) filterByInstanceData(instance *config.DBInstance, filters config.Filters) bool {
 	if len(filters) == 0 {
 		return true
 	}
 
 	for k, filter := range filters {
+		isMatch := false
+
 		switch k {
 		case "AvailabilityZone":
-			return r.matches(filter, aws.StringValue(instance.AvailabilityZone))
+			isMatch = r.matches(filter, aws.StringValue(instance.AvailabilityZone))
 		case "DBInstanceArn":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceArn))
+			isMatch = r.matches(filter, aws.StringValue(instance.DBInstanceArn))
 		case "DBInstanceClass":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceClass))
+			isMatch = r.matches(filter, aws.StringValue(instance.DBInstanceClass))
 		case "DBInstanceIdentifier":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceIdentifier))
+			isMatch = r.matches(filter, aws.StringValue(instance.DBInstanceIdentifier))
 		case "DBInstanceStatus":
-			return r.matches(filter, aws.StringValue(instance.DBInstanceStatus))
+			isMatch = r.matches(filter, aws.StringValue(instance.DBInstanceStatus))
 		case "Engine":
-			return r.matches(filter, aws.StringValue(instance.Engine))
+			isMatch = r.matches(filter, aws.StringValue(instance.Engine))
 		case "EngineVersion":
-			return r.matches(filter, aws.StringValue(instance.EngineVersion))
+			isMatch = r.matches(filter, aws.StringValue(instance.EngineVersion))
 		case "VpcId":
-			return r.matches(filter, aws.StringValue(instance.DBSubnetGroup.VpcId))
+			isMatch = r.matches(filter, aws.StringValue(instance.DBSubnetGroup.VpcId))
 		default:
-			log.Fatalf("Unknown instance filter key %s (%s)", k, filter)
+			log.Warnf("Unknown instance filter key %s (%s)", k, filter)
+		}
+
+		if !isMatch {
+			return false
 		}
 	}
 
