@@ -17,12 +17,12 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringSliceFlag{
 			Name:   "instance-filter",
-			Usage:  "AWS filters",
+			Usage:  "filters to match AWS DB instance fields",
 			EnvVar: "INSTANCE_FILTER",
 		},
 		cli.StringSliceFlag{
 			Name:   "tag-filter",
-			Usage:  "AWS tag filters",
+			Usage:  "filters to match AWS DB instance tags",
 			EnvVar: "TAG_FILTER",
 		},
 		cli.StringFlag{
