@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/seatgeek/aws-dynamic-consul-catalog/service/rds"
@@ -10,9 +12,22 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "consul-aws-catalog"
+	app.Name = "aws-dynamic-consul-catalog"
 	app.Usage = "Easily maintain AWS RDS information in Consul service catalog"
 	app.Version = "0.1"
+
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			switch setting.Key {
+			case "vcs.revision":
+				app.Version = setting.Value
+			case "vcs.time":
+				if compileTime, err := time.Parse(time.RFC3339, setting.Value); err != nil {
+					app.Compiled = compileTime
+				}
+			}
+		}
+	}
 
 	app.Flags = []cli.Flag{
 		cli.StringSliceFlag{
